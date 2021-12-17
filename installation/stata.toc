@@ -1,0 +1,11 @@
+v 1.0
+d DELAUNAY: Delaunay triangulation, voronoi tessellation, convex hull
+d
+d
+d Asjad Naqvi, 
+d WU Vienna/IIASA, Austria
+d
+d asjadnaqvi@gmail.com
+d https://medium.com/the-stata-guide
+d https://github.com/asjadnaqvi/Stata-schemes
+
