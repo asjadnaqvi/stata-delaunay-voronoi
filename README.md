@@ -8,7 +8,7 @@ Implementation of the S-Hull Delaunay triangulation algorithm in Stata. The algo
 ## Install the package:
 
 ```applescript
-net install clipline, from("https://raw.githubusercontent.com/asjadnaqvi/stata-delaunay-voronoi/main/installation/") replace
+net install delaunay, from("https://raw.githubusercontent.com/asjadnaqvi/stata-delaunay-voronoi/main/installation/") replace
 ```
 
 The syntax is:
