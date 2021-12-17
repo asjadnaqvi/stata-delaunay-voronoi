@@ -1,5 +1,16 @@
-//clear mata
-//set matastrict off 
+*! Ver 1.00 22.11.2021
+
+
+*************************
+*					    *
+*       Voronoi         *
+*         by            *
+*     Asjad Naqvi		*
+*                       * 
+*     Last updated:     *
+*      2 Dec 2021       *
+*						* 
+*************************
 
 
 
@@ -32,6 +43,7 @@ mata // voronoi_core
 function voronoi_core(triangles, points, coords, halfedges, hull)
 {
 
+	triangles = select(triangles, (triangles[.,1] :< .)) // added 17.12.2021
 	tri3 = colshape(triangles',3)'  // reshape triangles
 	
 	xmin = .
@@ -193,7 +205,6 @@ function bounds(points,xmin,xmax,ymin,ymax)
 	st_numscalar("ymin", ymin)
 	st_numscalar("ymax", ymax)
 	
-	//printf("Bounds (xmin,xmax,ymin,ymax):%9.0f,%9.0f,%9.0f,%9.0f\n", xmin,xmax,ymin,ymax)
 }
 end
 
@@ -238,7 +249,7 @@ end
 // another circumcenter. it just returns a different structure
 
 ************************
-// 	  circumcenter2	  //	from https://github.com/d3/d3-delaunay/blob/main/src/voronoi.js
+// 	  circumcenter2	  //	
 ************************    
 
 cap mata: mata drop circumcenter2()
@@ -267,18 +278,9 @@ function circumcenter2(points,triangles,i)
 	
 	
 	if (abs(ab) < 1e-9 ) {
-		// degenerate case (collinear diagram) almost equal points (degenerate triangle)
-        // the circumcenter is at the infinity, in a direction that is:
-        // 1. orthogonal to the halfedge.
-	
-		//printf("Degenerate %9.0f\n", i)
+		// degenerate case 
 	
 		a = 1e9
-	
-        // 2. points away from the center; since the list of triangles starts
-        // in the center, the first point of the first triangle
-        // will be our reference
-
 		r = triangles[1] * 2
 		a = a * sign((points[r - 1,1] - x1) * ey - (points[r,1] - y1) * ex);
 		myx = (x1 + x3) / 2 - a * ey;
@@ -321,7 +323,7 @@ function forEachVoronoiEdge(triangles,halfedges, real matrix xx)
 end
 
 ************************
-// 	  _project		  //	from https://github.com/d3/d3-delaunay/blob/main/src/voronoi.js
+// 	  _project		  //
 ************************    
 
 cap mata: mata drop project()
@@ -415,7 +417,6 @@ mata:  // clipline
 	function clipline(x1, y1, x2, y2, minX, maxX, minY, maxY)  
 	{
 		real scalar code1, code2, accept, x, y
-		//printf("pre:%9.0f,%9.0f,%9.0f,%9.0f \n",x1,y1,x2,y2)
 
 		// Defining region codes 
 		LEFT   = 1  // 0001 

@@ -1,7 +1,7 @@
 {smcl}
 {* 13Dec2021}{...}
 {hi:help delaunay}{...}
-{right:{browse "https://github.com/asjadnaqvi/Stata-delaunay":delaunay v1.0 (GitHub)}}
+{right:{browse "https://github.com/asjadnaqvi/stata-delaunay-voronoi":delaunay v1.0 (GitHub)}}
 
 {hline}
 

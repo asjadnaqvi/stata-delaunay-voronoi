@@ -7,6 +7,8 @@ Implementation of the S-Hull Delaunay triangulation algorithm in Stata. The algo
 
 ## Install the package:
 
+Please install and replace the package everytime  you want to use it. Small tweaks are continuously being made. The following command can be used to install it directly in Stata:
+
 ```applescript
 net install delaunay, from("https://raw.githubusercontent.com/asjadnaqvi/stata-delaunay-voronoi/main/installation/") replace
 ```

@@ -12,8 +12,6 @@
 *						* 
 *************************
 
-//clear mata
-//set matastrict off 
 
 cap program drop delaunay
 
@@ -135,8 +133,6 @@ void _update(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,hullTri
 	i0 = 0
 	i1 = 0
 	i2 = 0
-
-	//printf("check 2 \n")
 	
 	// pick a seed point close to the center
 
@@ -715,7 +711,7 @@ function inCircle(ax, ay, bx, by, cx, cy, px, py)
 
 	x = (dx * (ey * cp - bp * fy)) - (dy * (ex * cp - bp * fx)) + (ap * (ex * fy - ey * fx))
 
-	return(x < 0) // a true false statement
+	return(x < 0) 
 
 }
 end
@@ -745,8 +741,6 @@ function circumradius(ax, ay, bx, by, cx, cy)
     y = ((dx * cl) - (ex * bl)) * d
 
     return(x*x + y*y)
-
-
 }
 end
 
@@ -779,7 +773,7 @@ end
 
 
 ************************
-// 	   quicksort   	  //    // fix while true
+// 	   quicksort   	  //   
 ************************
 
 cap mata: mata drop _quicksort()
@@ -913,10 +907,6 @@ end
 
 
 
-
-
-
-
 ************************
 // 	   triangles  	  //  
 ************************
@@ -943,7 +933,6 @@ end
 
 
 cap program drop add_triangles
-
 program define add_triangles
 	version 15
 
