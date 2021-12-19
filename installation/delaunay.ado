@@ -12,35 +12,50 @@
 *						* 
 *************************
 
+// Drops the program from memory if already loaded
+cap prog drop delaunay
 
-cap program drop delaunay
+// Added sortpreserve to the program declaration, since we don't want to alter 
+// the data without the end user being explicitly aware of it.
+prog def delaunay, eclass sortpreserve
 
-program define delaunay, eclass
+	// Version control statement
 	version 15
-	syntax varlist(min=2 max=2 numeric), id(varname numeric) [triangles] [hull] [voronoi]
+	
+	// Defines the syntax used to call the program and includes the if/in option
+	syntax varlist(min = 2 max = 2 numeric) [if] [in], id(varname numeric) 	 ///   
+	[TRIangles Hull VORonoi]
 	
 	
 	di "Delaunay: Initializing"
 	
+	// Parses the variable list into `x' and `y'
 	gettoken x y : varlist
 	
-	if `id' {
-		sort `id'
-	}
-	else {
-		gen _id = _n
-		sort _id
-	}
+	// Since the ID variable is a required argument, this will always be true
+	if `id' sort `id'
+	
+	// This condition will never be met unless the ID argument is optional
+	// Since the temp ID being generated in this instance is based on _n it will
+	// by definition already be sorted
+	else g _id = _n
+		
+	// Mark the observations that should be used for the program
+	marksample touse, strok
+	
 	
 	// get everything in order
 	
-	mata: points  = st_data(.,("`x'", "`y'"))
-	
+	// This should only select the observations based on the if/in conditions
+	// Given all of the boilerplat that is here, it seems like this should 
+	// either be contained in a struct or handled by the initializer for a 
+	// class object, which would then reduce all of this to a single line.
+	mata: points  = select(st_data(., ("`x'", "`y'")), st_data(., "`touse'"))
 	mata: eps          = 1e-20
-	mata: edgestack    = J(512,1,.) 
+	mata: edgestack    = J(512, 1, .) 
 	mata: coords       = initialize(points)
 	mata: num          = rows(coords) / 2
-	mata: maxTriangles =  max(((2 * (num)) - 5, 0)) 
+	mata: maxTriangles = max(((2 * (num)) - 5, 0)) 
 	
 	// core arrays
 	mata: triangles = J(maxTriangles * 3, 1, .)   
@@ -62,34 +77,26 @@ program define delaunay, eclass
 	
 	
 	di "Delaunay: Starting core routines"
-	// run the core routine
-	mata: _update(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,hullTri,hullHash,hashSize,eps,edgestack)
 
-	
-	
+	// run the core routine 
+	// It seems like this function should have a more informative name.  Update
+	// makes it sound like it is modifying existing values of something instead
+	// of doing all the computational routines you have defined below.
+	mata: _update(coords, ids, dists, triangles, halfedges, hull, hullNext,  ///   
+				  hullPrev, hullTri, hullHash, hashSize, eps, edgestack)
+
 	*****************************
 	***  add variables here   ***
 	*****************************
 
 	// if these are defined, push to them to the dataset	
+	// The user will see the additional variables getting added to the dataset
+	// so there isn't a need to include the display statements.
+	if "`triangles'" != "" add_triangles
+	if "`hull'" != "" add_hull
+	if "`voronoi'" != "" voronoi
 	
-	if "`triangles'" != "" {
-		di "Delaunay: Starting triangle export"
-		add_triangles
-
-	}
-	
-	if "`hull'" != "" {
-		di "Delaunay: Starting hull export"
-		add_hull
-	}
-	
-	if "`voronoi'" != "" {
-		di "Delaunay: Starting voronoi export"
-		voronoi
-	}	
-	
-	di "Delaunay: End of program"
+// End of program declaration
 end
 
 
