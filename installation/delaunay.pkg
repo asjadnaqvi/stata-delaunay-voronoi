@@ -1,13 +1,16 @@
-v 1.0
+v 1.01
 d {bf:DELAUNAY}: Delaunay triangulation, Voronoi tesselation, and Convex Hull
 d
-d
+d v1.01: [if] [in] statements added
+d v1.00: first run
 d
 d Requires: Stata version 15 or higher.
 d
 d KW: Stata
 d KW: graphs
-d KW: line clipping
+d KW: Delaunay
+d KW: Voronoi
+d KW: Convex hull
 d
 d Distribution date: 05 Dec 2021
 d License: MIT
