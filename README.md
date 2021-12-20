@@ -19,7 +19,7 @@ The force option ensures that the files are replaced even if Stata thinks they a
 The syntax is:
 
 ```applescript
-delaunay x y, id(id) [triangles] [hull] [voronoi]
+delaunay x y [if] [in], id(id) [triangles] [hull] [voronoi]
 ```
 
 where `x` and `y` are coordinates. `id` is the serial identifier of each point. The last three options export the `triangles`, `hull`, and `voronoi` back to Stata for plotting.
