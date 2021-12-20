@@ -98,7 +98,7 @@ Plot the Voronoi tessellations:
 ## In the pipeline
 
 1.   The above errors.  
-2.   Add [if] [in] options.  
+2.   Add [if] [in] options. DONE. 
 3.   Add an option to check and correct indices.  
 4.   Get rid of Mata junk 
 5.   Separate the Mata calculations from export back to Stata. 
