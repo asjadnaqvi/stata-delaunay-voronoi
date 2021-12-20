@@ -1,15 +1,16 @@
-*! Ver 1.00 22.11.2021 first run
+*! Ver 1.01 20.12.2021. [if] [in] added by @wbuchanan
+* Ver 1.00 22.11.2021 first run
 
 
 *************************
-*					    *
+*			*
 *    S-Hull Delaunay    *
 *         by            *
-*     Asjad Naqvi		*
+*     Asjad Naqvi	*
 *                       * 
 *     Last updated:     *
 *      2 Dec 2021       *
-*						* 
+*			* 
 *************************
 
 // Drops the program from memory if already loaded
