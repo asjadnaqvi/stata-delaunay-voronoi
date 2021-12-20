@@ -13,7 +13,7 @@ Please install and replace the package everytime  you want to use it. Small twea
 net install delaunay, from("https://raw.githubusercontent.com/asjadnaqvi/stata-delaunay-voronoi/main/installation/") force
 ```
 
-The force option ensures that the files are replaced even if Stata thinks they are the same. For older versions see the `versions` folder. These are there to allow roll-back of stable releases.
+The force option ensures that the files are replaced even if Stata thinks they are the same. For older versions see the `versions` folder for roll-back options.
 
 
 The syntax is:
