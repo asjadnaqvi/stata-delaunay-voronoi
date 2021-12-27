@@ -156,15 +156,15 @@ delaunay x y2, id(id) tri hull vor rescale
 
 We can compare the triangles:
 
-<img src="/figures/triangles_norescale_1.png" height="200"><img src="/figures/triangles_rescale_1.png" height="200">
-<img src="/figures/triangles_norescale_5.png" height="200"><img src="/figures/triangles_rescale_5.png" height="200">
-<img src="/figures/triangles_norescale_10.png" height="200"><img src="/figures/triangles_rescale_10.png" height="200">
+<img src="/figures/triangles_norescale_1.png" height="300"><img src="/figures/triangles_rescale_1.png" height="300">
+<img src="/figures/triangles_norescale_5.png" height="300"><img src="/figures/triangles_rescale_5.png" height="300">
+<img src="/figures/triangles_norescale_10.png" height="300"><img src="/figures/triangles_rescale_10.png" height="300">
 
 and the Voronoi tessellations:
 
-<img src="/figures/voronoi_norescale_1.png" height="200"><img src="/figures/voronoi_rescale_1.png" height="200">
-<img src="/figures/voronoi_norescale_5.png" height="200"><img src="/figures/voronoi_rescale_5.png" height="200">
-<img src="/figures/voronoi_norescale_10.png" height="200"><img src="/figures/voronoi_rescale_10.png" height="200">
+<img src="/figures/voronoi_norescale_1.png" height="300"><img src="/figures/voronoi_rescale_1.png" height="300">
+<img src="/figures/voronoi_norescale_5.png" height="300"><img src="/figures/voronoi_rescale_5.png" height="300">
+<img src="/figures/voronoi_norescale_10.png" height="300"><img src="/figures/voronoi_rescale_10.png" height="300">
 
 ## Known issues
 
