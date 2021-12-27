@@ -157,7 +157,7 @@ delaunay x y2, id(id) tri hull vor rescale
 We can compare the triangles:
 
 <img src="/figures/triangles_norescale_1.png" height="220"><img src="/figures/triangles_rescale_1.png" height="220">
-<img src="/figures/triangles_norescale_5.png" height="220"><img src="/figures/triangles_rescale_5.png" height="3220">
+<img src="/figures/triangles_norescale_5.png" height="220"><img src="/figures/triangles_rescale_5.png" height="220">
 <img src="/figures/triangles_norescale_10.png" height="220"><img src="/figures/triangles_rescale_10.png" height="220">
 <img src="/figures/triangles_norescale_100.png" height="220"><img src="/figures/triangles_rescale_100.png" height="220">
 
