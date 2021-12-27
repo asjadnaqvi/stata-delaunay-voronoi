@@ -22,10 +22,8 @@ program define voronoi
 	
 	
 	//di "Voronoi: Initializing"
-	mata: voronoi_core(triangles, points, halfedges, hull)
+	mata: voronoi_core(triangles, points, points2, halfedges, hull)
 	// di "Voronoi: Done with Mata routines"
-	
-	
 	
 	
 	// push to Stata
@@ -45,9 +43,9 @@ end
 cap mata: mata drop voronoi_core()
 
 mata // voronoi_core
-function voronoi_core(triangles, points, halfedges, hull)
+function voronoi_core(triangles, points, points2, halfedges, hull)
 {
-	coords = initialize(points)
+	coords = initialize(points2)
 
 	triangles = select(triangles, (triangles[.,1] :< .)) // added 17.12.2021
 	tri3 = colshape(triangles',3)'  // reshape triangles
@@ -58,7 +56,7 @@ function voronoi_core(triangles, points, halfedges, hull)
 	ymin = .
 	ymax = .
 	
-	bounds(points,xmin,xmax,ymin,ymax) 
+	bounds(points2,xmin,xmax,ymin,ymax) 
 	
 	// collect the voronoi centers in vorcenter
 	num2 = rows(triangles) / 3  // drop the missing rows
@@ -66,7 +64,7 @@ function voronoi_core(triangles, points, halfedges, hull)
 
 	vorcenter = J(num2,2,.)
 	for (i=1; i <= num2; i++) {
-		vorcenter[i,.]  = circumcenter2(points,triangles,i)
+		vorcenter[i,.]  = circumcenter2(points2,triangles,i)
 	}
 	
 	
@@ -174,6 +172,17 @@ function voronoi_core(triangles, points, halfedges, hull)
 
 	cliplist = select(cliplist, (cliplist[.,2] :< .)) // drop the missing rows	
 	
+	xminr = .
+	xmaxr = .
+	yminr = .
+	ymaxr = .
+	
+	bounds(points,xminr,xmaxr,yminr,ymaxr) 
+	
+	cliplist[.,1] = rescale2(cliplist[.,1], xmin, xmax, xminr, xmaxr)
+	cliplist[.,2] = rescale2(cliplist[.,2], ymin, ymax, yminr, ymaxr)
+	cliplist[.,3] = rescale2(cliplist[.,3], xmin, xmax, xminr, xmaxr)
+	cliplist[.,4] = rescale2(cliplist[.,4], ymin, ymax, yminr, ymaxr)	
 	
 	st_matrix("vor",cliplist)
 	

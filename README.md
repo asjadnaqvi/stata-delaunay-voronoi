@@ -22,7 +22,7 @@ The force option ensures that the files are replaced even if Stata thinks they a
 The syntax is:
 
 ```applescript
-delaunay x y [if] [in], id(id) [triangles] [hull] [voronoi]
+delaunay x y [if] [in], id(id) [<u>res</u>cale] [<u>tri</u>angles] [<u>h</u>ull] [<u>vor</u>onoi]
 ```
 
 where `x` and `y` are coordinates. `id` is the serial identifier of each point. The last three options export the `triangles`, `hull`, and `voronoi` back to Stata for plotting.
@@ -76,7 +76,7 @@ Plot the triangles and the hull:
 ```
 
 
-<img src="delaunay1_triangles.png" height="500">
+<img src="/figures/delaunay1_triangles.png" height="500">
 
 Plot the Voronoi tessellations:
 
@@ -88,14 +88,88 @@ Plot the Voronoi tessellations:
 		legend(off)	aspect(1) xsize(1) ysize(1)
 ```
 
-<img src="delaunay2_voronoi.png" height="500">
+<img src="/figures/delaunay2_voronoi.png" height="500">
 
+## Versions
+
+### 1.02
+
+Added the **rescale** option. From the help file: 
+
+> Delaunay triangles, and subsequently Voronoi tessellations, are not agnostic about the scale of the x and y-axis. They were designed to deal with physical geometry and therefore expect x and y values to be on a similar scale. If we are working with data where one variable is several times the magnitude of the second, then the command will correctly execute the triangles but they will be highly stretched in one direction. The *rescale* option normalizes both the x and y variables on a common range, calculates the triangles and rescales them back to provide reasonable looking triangles.
+
+Let's test the following example where the yaxis is scaled up:
+
+```
+clear
+
+
+set obs 20
+gen id = _n
+
+set seed 103
+
+gen x = runiform(1, 5)
+gen y = runiform(1, 5)
+
+
+foreach i in 1 5 10 {
+
+cap drop y2	
+	gen y2 = y * `i'
+
+
+// without rescaling
+
+delaunay x y2, id(id) tri hull vor 
+
+	twoway (scatter y2 x, msize(small)) ///
+		(line hull_y hull_x, lw(thin)) ///
+		(area tri_y tri_x, cmissing(n) nodropbase fc(gs14%10) lw(0.04) lc()), ///
+		legend(off) aspect(1) ///
+		title("y = `i'x (no rescaling)")
+
+
+	twoway (scatter y2 x, msize(small)) ///
+		(pcspike vor_y1 vor_x1 vor_y2 vor_x2, lw(0.2) lc()) ///
+		, legend(off) aspect(1) xlabel(#10) ylabel(#10) ///
+		title("y = `i'x (no rescaling)")
+
+
+// with rescaling
+
+delaunay x y2, id(id) tri hull vor rescale
+
+	twoway (scatter y2 x, msize(small)) ///
+		(line hull_y hull_x, lw(thin)) ///
+		(area tri_y tri_x, cmissing(n) nodropbase fc(gs14%10) lw(0.04) lc()), ///
+		legend(off) aspect(1) ///
+		title("y = `i'x (with rescaling)")
+
+
+	twoway (scatter y2 x, msize(small)) ///
+		(pcspike vor_y1 vor_x1 vor_y2 vor_x2, lw(0.2) lc()) ///
+		, legend(off) aspect(1) xlabel(#10) ylabel(#10) ///
+		title("y = `i'x (with rescaling)")
+}
+```
+
+We can compare the triangles:
+
+<img src="/figures/triangles_norescale_1.png" height="200"><img src="/figures/triangles_rescale_1.png" height="200">
+<img src="/figures/triangles_norescale_5.png" height="200"><img src="/figures/triangles_rescale_5.png" height="200">
+<img src="/figures/triangles_norescale_10.png" height="200"><img src="/figures/triangles_rescale_10.png" height="200">
+
+and the Voronoi tessellations:
+
+<img src="/figures/voronoi_norescale_1.png" height="200"><img src="/figures/voronoi_rescale_1.png" height="200">
+<img src="/figures/voronoi_norescale_5.png" height="200"><img src="/figures/voronoi_rescale_5.png" height="200">
+<img src="/figures/voronoi_norescale_10.png" height="200"><img src="/figures/voronoi_rescale_10.png" height="200">
 
 ## Known issues
 
 1.   For some point combinations, the last point is being skipped from triangles.  
-2.   For some voronoi lines on the edges, the infinite rays are not being calculated.
-
+2.   For some Voronoi lines on the edges, the infinite rays are not being calculated.
 
 
 ## In the pipeline
