@@ -1,4 +1,5 @@
-*! Ver 1.00 22.11.2021
+*! Ver 1.00 27.12.2021. Asjad. added rescale
+* Ver 1.00 22.11.2021. First release
 
 
 *************************
@@ -8,7 +9,7 @@
 *     Asjad Naqvi		*
 *                       * 
 *     Last updated:     *
-*      2 Dec 2021       *
+*      27 Dec 2021      *
 *						* 
 *************************
 
@@ -19,16 +20,20 @@ cap program drop voronoi
 program define voronoi
 	version 15
 	
-	di "Voronoi: Initializing"
-	mata: voronoi_core(triangles, points, coords, halfedges, hull)
-	di "Voronoi: Done with Mata routines"
+	
+	//di "Voronoi: Initializing"
+	mata: voronoi_core(triangles, points, halfedges, hull)
+	// di "Voronoi: Done with Mata routines"
+	
+	
+	
 	
 	// push to Stata
 	svmat vor
 	mat colnames vor = "vor_x1" "vor_y1" "vor_x2" "vor_y2"
 	cap drop vor* 
 	svmat vor, n(col)
-	di "Voronoi: Done with export to Stata"
+	di "Voronoi: Done"
 	
 end	
 
@@ -40,11 +45,13 @@ end
 cap mata: mata drop voronoi_core()
 
 mata // voronoi_core
-function voronoi_core(triangles, points, coords, halfedges, hull)
+function voronoi_core(triangles, points, halfedges, hull)
 {
+	coords = initialize(points)
 
 	triangles = select(triangles, (triangles[.,1] :< .)) // added 17.12.2021
 	tri3 = colshape(triangles',3)'  // reshape triangles
+	
 	
 	xmin = .
 	xmax = .
@@ -53,7 +60,7 @@ function voronoi_core(triangles, points, coords, halfedges, hull)
 	
 	bounds(points,xmin,xmax,ymin,ymax) 
 	
-	// collect the voronoi centers in vector renamed from triangleCenter to vorcenter
+	// collect the voronoi centers in vorcenter
 	num2 = rows(triangles) / 3  // drop the missing rows
 
 
@@ -82,7 +89,8 @@ function voronoi_core(triangles, points, coords, halfedges, hull)
 
 			
 	point0 = select(point0, (point0[.,1] :< .)) // drop the missing rows
-	point1 = select(point1, (point1[.,1] :< .)) // drop the missing rows		
+	point1 = select(point1, (point1[.,1] :< .)) 		
+
 
 	
 	// exterior cell rays
@@ -135,12 +143,12 @@ function voronoi_core(triangles, points, coords, halfedges, hull)
 			
 			h0 = h1
 			h1 = hull[i,1]
-			t = findhulltri(h0,h1,tri3)
+			t = findhulltri(h0, h1, tri3)
 			
-			xxx  = vorcenter[t,.] 
+			vorc  = vorcenter[t,.] 
 			
 			v = h0 * 4
-			p = project(xxx[1,1], xxx[1,2], vectors[v + 2, 1], vectors[v + 3, 1], xmin, xmax, ymin, ymax)
+			p = project(vorc[1,1], vorc[1,2], vectors[v + 2, 1], vectors[v + 3, 1], xmin, xmax, ymin, ymax)
 			
 			if (p[1,1] > 0) {
 			pointh0[i,.] = vorcenter[t,.]
@@ -153,8 +161,10 @@ function voronoi_core(triangles, points, coords, halfedges, hull)
 	// append with point type
 	point0 =  point0 \ pointh0
 	point1 =  (point1, J(rows(point1),1,1)) \ (pointh1, J(rows(pointh1),1,2))
+
 	
-	
+	// clip the rays
+	// gen x1, y1, x2, y2
 	cliplist = J(rows(point0),4,.)
 		for (i=1; i <= rows(point0); i++) {			
 			//i
@@ -164,13 +174,12 @@ function voronoi_core(triangles, points, coords, halfedges, hull)
 
 	cliplist = select(cliplist, (cliplist[.,2] :< .)) // drop the missing rows	
 	
+	
 	st_matrix("vor",cliplist)
 	
 }
 
 end
-
-
 
 
 
@@ -190,14 +199,15 @@ mata // bounds
 function bounds(points,xmin,xmax,ymin,ymax)
 {
 
+	// 5% displacment based on (max - min)
 	displacex = (max(points[.,1]) - min(points[.,1])) * 0.05
 	displacey = (max(points[.,2]) - min(points[.,2])) * 0.05
 
-	xmin 	  = floor(min(points[.,1])) - displacex
-	xmax 	  =  ceil(max(points[.,1])) + displacex
+	xmin 	  = min(points[.,1]) - displacex
+	xmax 	  = max(points[.,1]) + displacex
 
-	ymin 	  = floor(min(points[.,2])) - displacey
-	ymax 	  =  ceil(max(points[.,2])) + displacey
+	ymin 	  = min(points[.,2]) - displacey
+	ymax 	  = max(points[.,2]) + displacey
 
 	st_numscalar("xmin", xmin)
 	st_numscalar("xmax", xmax)
@@ -393,7 +403,7 @@ end
 
 cap mata: mata drop findhulltri()
 
-mata: //  find hull tri whose circumcenter we need
+mata: //  findhulltri
 function findhulltri(x,y,tri3)
 {	
 	for (i=1; i <= cols(tri3); i++) {	
@@ -403,6 +413,46 @@ function findhulltri(x,y,tri3)
 end
 
 
+
+*********************
+// 	initialize	   //
+*********************
+
+cap mata: mata drop initialize()
+
+mata: // initialize
+real vector initialize(real matrix data)
+{
+	real scalar num, i
+	real vector coords
+	
+	num  = rows(data)
+	
+	coords = J(num*2,1,.)
+	
+		for (i=1; i<=num; i++) {	
+			coords[2 * i - 1, 1] = data[i,1]
+			coords[2 * i    , 1] = data[i,2]
+		}
+		
+	return(coords)
+}
+end
+
+********************
+// 	 rescale2	  // rescale a vector column, based on rescaled min/max, and original minmax	
+********************
+
+cap mata: mata drop rescale2()
+
+mata: // rescale2
+real vector rescale2(points, mymin, mymax, a, b)
+{
+	newpoints = (b - a) * (points :- mymin) :/ (mymax - mymin) :+ a
+	
+	return(newpoints)
+}
+end
 			
 
 *********************

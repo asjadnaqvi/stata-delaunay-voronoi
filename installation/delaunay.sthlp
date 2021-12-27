@@ -1,7 +1,7 @@
 {smcl}
-{* 13Dec2021}{...}
+{* 27Dec2021}{...}
 {hi:help delaunay}{...}
-{right:{browse "https://github.com/asjadnaqvi/stata-delaunay-voronoi":delaunay v1.01 (GitHub)}}
+{right:{browse "https://github.com/asjadnaqvi/stata-delaunay-voronoi":delaunay v1.02 (GitHub)}}
 
 {hline}
 
@@ -9,16 +9,15 @@
 
 {p 4 4 2}
 {cmd:delaunay} implements the S-Hull algorithm to generate Delaunay triangles. The Voronoi triangles are generated as a dual
-to the triangulation. The script is derived from Mapbox and d3js implementations. The S-hull implementation is incredibly
-fast. It is now the industry benchmark for visualizations. Exporting and rendering the triangles on the screen takes time
-especially if there are more than 5,000 triangles. The Voronoi algorithm is derived from the script by Mike Bostock, the main
-person behind the D3js visualization toolkit. Line clipping is based on the {cmd:clipline} command. 
+to the triangulation. The code is based on Mapbox and d3js implementations. The S-hull implementation is incredibly
+fast and is now the industry standard. Exporting and rendering the triangles on the screen takes time
+especially if there are more than 10,000 triangles.
 
 
 
 {marker syntax}{title:Syntax}
 {p 8 15 2}
-{cmd:delaunay} {it:x y} [if] [in], id({it:id}) [{cmdab:tri:angles}] [{cmdab:h:ull}] [{cmdab:vor:onoi}]
+{cmd:delaunay} {it:x y} [if] [in], id({it:id}) [{cmdab:res:cale}] [{cmdab:tri:angles}] [{cmdab:h:ull}] [{cmdab:vor:onoi}]
 
 {synoptset 36 tabbed}{...}
 {synopthdr}
@@ -27,6 +26,8 @@ person behind the D3js visualization toolkit. Line clipping is based on the {cmd
 {p2coldent : {opt delauay x y}}The command requires an {it:(x,y)} coordinate pair stored as two numeric variables. Please make the order sequence of the variables is correct.{p_end}
 
 {p2coldent : {opt id(id)}}This variable contains the sequence order of the coordinate pairs. This should be sorted and without gaps. (Still need to add options to check and parse this correctly in Mata){p_end}
+
+{p2coldent : {opt res:cale}} Delaunay triangles, and subsequently Voronoi tessellations, are not agnostic about the scale of the x and y-axis. They were designed to deal with physical geometry and therefore expect x and y values to be on a similar scale. If we are working with data where one variable is several times the magnitude of the second, then the command will correctly execute the triangles but they will be highly stretched in one direction. The {it:rescale} option normalizes both the x and y variables on a common range, calculates the triangles and rescales them back to provide reasonable looking triangles. {p_end}
 
 {p2coldent : {opt tri:angles}}Export the triangles back to Stata as three new variables {it:tri_id, tri_x, tri_y}. The first variable, {it:tri_id} is the the points {it:id}, and the remaining two are the coordinates. The data structure is set up to generate shapes and (AFAIK), it is the fastest option in Stata. These can be plotted using the {it:twoway area} option.{p_end}
 
@@ -38,33 +39,27 @@ person behind the D3js visualization toolkit. Line clipping is based on the {cmd
 {p2colreset}{...}
 
 {p 4 4 2}
-If no options are specified, then nothing is returned. The triangles, the convex hull, and the voronoi lines are stored as Stata matrices (mat dir), that can be extracted.
+If no options are specified, then nothing is returned. The triangles, the convex hull, and the voronoi lines are stored as Stata matrices (type mat dir), that can be extracted later if required.
 
 
 {title:Known issues}
 
-{p 4 4 2}
-1. For some point combinations, the last point is being skipped from triangles.
-2. For some voronoi lines on the edge, the infinite rays are not being calculated.
+    1. For some point combinations, the last point is being skipped from triangles.
+    2. For some Voronoi rays, the infinite rays are not being calculated.
 
-{title:To be fixed}
+{title:Version history}
 
-{p 4 4 2}
-1. The above errors.
-2. Add if options. DONE.
-3. Add an option to check and correct indices.
-4. Get rid of Mata junk
-5. Separate the Mata calculations from export back to Stata.
-6. Call the {cmd clipline} command from within the program, and add box options.
-7. Convert Voronoi lines to shapes for more interesting visualizations.
-8. Add e-class locals.
+    {bf:1.02}: Rescale function added. Further code improvements.
+    {bf:1.01}: Minor code cleanups. [if] [in] conditions added by wbuchanan. 
+    {bf:1.00}: First release
+
 
 {hline}
 
 
 Keywords: Stata, delaunay, voronoi, convex hull, s-hull algorithm
-Version: {bf:delaunay} version 1.01
-This version: 20 Dec 2021
+Version: {bf:delaunay} version 1.02
+This version: 27 Dec 2021
 First release: 05 Dec 2021
 License: {browse "https://opensource.org/licenses/MIT":MIT}
 

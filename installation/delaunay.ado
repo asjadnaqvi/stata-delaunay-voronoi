@@ -1,23 +1,23 @@
-*! Ver 1.01 20.12.2021. [if] [in] added by @wbuchanan
-* Ver 1.00 22.11.2021 first run
+*! Ver 1.02 26.12.2021. Asjad Naqvi. rescale added.
+*  Ver 1.01 20.12.2021. Asjad Naqvi. if/in & notes by wbuchanan
+*  Ver 1.00 22.11.2021 first run
 
 
 *************************
-*			*
+*                       *
 *    S-Hull Delaunay    *
-*         by            *
-*     Asjad Naqvi	*
+*          by           *
+*     Asjad Naqvi       *
 *                       * 
-*     Last updated:     *
-*      2 Dec 2021       *
-*			* 
+*    Last updated:      *
+*     27 Dec 2021       *
+*			            * 
 *************************
 
 // Drops the program from memory if already loaded
 cap prog drop delaunay
 
-// Added sortpreserve to the program declaration, since we don't want to alter 
-// the data without the end user being explicitly aware of it.
+
 prog def delaunay, eclass sortpreserve
 
 	// Version control statement
@@ -25,7 +25,8 @@ prog def delaunay, eclass sortpreserve
 	
 	// Defines the syntax used to call the program and includes the if/in option
 	syntax varlist(min = 2 max = 2 numeric) [if] [in], id(varname numeric) 	 ///   
-	[TRIangles Hull VORonoi]
+	[TRIangles Hull VORonoi REScale] ///
+	
 	
 	
 	di "Delaunay: Initializing"
@@ -47,16 +48,28 @@ prog def delaunay, eclass sortpreserve
 	
 	// get everything in order
 	
-	// This should only select the observations based on the if/in conditions
-	// Given all of the boilerplat that is here, it seems like this should 
-	// either be contained in a struct or handled by the initializer for a 
-	// class object, which would then reduce all of this to a single line.
-	mata: points  = select(st_data(., ("`x'", "`y'")), st_data(., "`touse'"))
+	// convert the options below to an initialization program
+	
+	mata: points   = select(st_data(., ("`x'", "`y'")), st_data(., "`touse'"))
+	mata: myminmax = colminmax(points)
+	
+	// rescale x and y axes to match
+	
+	if "`rescale'" != "" {	
+		mata: points2 = points  // create a copy
+		mata: points2[.,1] = rescale(points[.,1], 1, 2)
+		mata: points2[.,2] = rescale(points[.,2], 1, 2)
+	}
+	else {
+		mata: points2 = points
+	}
+	
+	
 	mata: eps          = 1e-20
 	mata: edgestack    = J(512, 1, .) 
-	mata: coords       = initialize(points)
+	mata: coords       = initialize(points2)
 	mata: num          = rows(coords) / 2
-	mata: maxTriangles = max(((2 * (num)) - 5, 0)) 
+	mata: maxTriangles = max(((2 * num) - 5, 0)) 
 	
 	// core arrays
 	mata: triangles = J(maxTriangles * 3, 1, .)   
@@ -69,7 +82,7 @@ prog def delaunay, eclass sortpreserve
 	mata: hullNext  = J(num, 1, .)  
 	mata: hullTri   = J(num, 1, .)  
 	mata: hullHash  = J(hashSize, 1, -1) 
-	mata: ids   	  = J(num, 1, .)
+	mata: ids   	= J(num, 1, .)
 	mata: dists     = J(num, 1, .)	
 	
 	// temporary arrays for sorting points
@@ -77,13 +90,11 @@ prog def delaunay, eclass sortpreserve
 	mata: dists = J(num, 1, .)
 	
 	
-	di "Delaunay: Starting core routines"
+	// di "Delaunay: Starting core routines"
 
 	// run the core routine 
-	// It seems like this function should have a more informative name.  Update
-	// makes it sound like it is modifying existing values of something instead
-	// of doing all the computational routines you have defined below.
-	mata: _update(coords, ids, dists, triangles, halfedges, hull, hullNext,  ///   
+
+	mata: _delaunay_core(coords, ids, dists, triangles, halfedges, hull, hullNext,  ///   
 				  hullPrev, hullTri, hullHash, hashSize, eps, edgestack)
 
 	*****************************
@@ -91,11 +102,10 @@ prog def delaunay, eclass sortpreserve
 	*****************************
 
 	// if these are defined, push to them to the dataset	
-	// The user will see the additional variables getting added to the dataset
-	// so there isn't a need to include the display statements.
+
 	if "`triangles'" != "" add_triangles
-	if "`hull'" != "" add_hull
-	if "`voronoi'" != "" voronoi
+	if "`hull'" 	 != "" add_hull
+	if "`voronoi'" 	 != "" voronoi
 	
 // End of program declaration
 end
@@ -103,13 +113,13 @@ end
 
 
 ************************
-// 	   update	  	  //  main routine
+// 	 _delaunay_core	  //  main routine. _update
 ************************
 
-cap mata: mata drop _update()
+cap mata: mata drop _delaunay_core()
 
-mata: // _update
-void _update(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,hullTri,hullHash,hashSize,eps,edgestack)
+mata: // _delaunay_core
+void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,hullTri,hullHash,hashSize,eps,edgestack)
 {
 	num = rows(coords) / 2
 	
@@ -198,13 +208,13 @@ void _update(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,hullTri
 		}
 		
 		
-		_quicksort(ids, dists, 1, num - 1)  // changed from num-1
+		_quicksort(ids, dists, 1, num - 1)  
 		
 		hull =  J(num, 1, .)
 		j = 1
 		d0 = -1e-16  // minus infinity
 
-		for (i=1; i <= num; i++) {   // changed from <= to <
+		for (i=1; i <= num; i++) {   
 			id = ids[i,1]
 
 			if (dists[id,1] > d0) {
@@ -308,9 +318,7 @@ void _update(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,hullTri
 
 		for (j=1; j<=hashSize; j++) {			
 			start = hullHash[(mod((key + j - 1), hashSize) + 1),1] 				
-			
-			//start
-			//hullNext[max((start,1)), 1]
+		
 			
 			if ((start != -1) & (start != hullNext[max((start,1)), 1])) break  // added max to prevent the 0 argument
 		}
@@ -413,7 +421,7 @@ end
 ****************************************************
 
 *********************
-// 	   __init__	   //
+// 	initialize	   //
 *********************
 
 cap mata: mata drop initialize()
@@ -874,6 +882,24 @@ function swapme(arr,i,j)
 }
 end
 
+
+********************
+// 	 rescale	  // rescale a vector column	
+********************
+
+cap mata: mata drop rescale()
+
+mata: // rescale
+real vector rescale(points, a, b)
+{
+	newpoints = (b - a) * (points :- colmin(points)) :/ (colmax(points) - colmin(points)) :+ a
+	
+	return(newpoints)
+}
+end
+
+
+
 ********************************
 ***    END OF SUBROUTINES    ***
 ********************************
@@ -952,14 +978,18 @@ program define add_triangles
 	mata: triangles4 = colshape(triangles3,1)
 	mata: triindex   = returnindex(triangles4)
 	mata: triangles5 = triindex,triangles4	
-
 	mata: mytriangles = fixtriangles(triangles5,points)
-	mata st_matrix("triangles", mytriangles)
+	
+	
+	mata: st_matrix("triangles", mytriangles)
 	mat colnames triangles = "tri_num" "tri_id" "tri_x" "tri_y"
 
 	cap drop tri* // make sure the variables are clear
+	
 	qui svmat triangles, n(col)
 
+	// drop the junk
+	mata: mata drop triangles2 triangles3 triangles4 triangles5 
 end
 
 
