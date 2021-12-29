@@ -85,7 +85,7 @@ Plot the Voronoi tessellations:
 
 ## Versions
 
-### 1.02
+### 1.02 (29 Dec 2021)
 
 Added the **rescale** option and removed the id requirement. The program now generates its own _id variable. From the help file: 
 
@@ -159,6 +159,14 @@ and the Voronoi tessellations:
 <img src="/figures/voronoi_norescale_5.png" height="220"><img src="/figures/voronoi_rescale_5.png" height="220">
 <img src="/figures/voronoi_norescale_10.png" height="220"><img src="/figures/voronoi_rescale_10.png" height="220">
 <img src="/figures/voronoi_norescale_100.png" height="220"><img src="/figures/voronoi_rescale_100.png" height="220">
+
+### 1.01 (19 Dec 2021)
+
+The [if] [in] options were added to the program based on wbuchanan's suggestions. Other code improvements. Some redundancy removed from programs.
+
+### 1.00 (5 Dec 2021)
+
+First release.
 
 ## Known issues
 
