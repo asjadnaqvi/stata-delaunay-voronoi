@@ -35,6 +35,7 @@ prog def delaunay, eclass sortpreserve
 	gettoken x y : varlist
 	
 	// ID is not really necessary but it helps
+		cap drop _id
 		gen _id = _n
 		lab var _id "observation id"
 	
