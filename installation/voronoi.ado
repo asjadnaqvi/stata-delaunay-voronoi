@@ -1,4 +1,4 @@
-*! Ver 1.00 27.12.2021. Asjad. added rescale
+*! Ver 1.02 Asjad Naqvi 27.12.2021. rescale integration
 * Ver 1.00 22.11.2021. First release
 
 
@@ -9,7 +9,7 @@
 *     Asjad Naqvi		*
 *                       * 
 *     Last updated:     *
-*      27 Dec 2021      *
+*      29 Dec 2021      *
 *						* 
 *************************
 
@@ -31,6 +31,12 @@ program define voronoi
 	mat colnames vor = "vor_x1" "vor_y1" "vor_x2" "vor_y2"
 	cap drop vor* 
 	svmat vor, n(col)
+	
+	lab var vor_x1 "Voronoi: start x-coord"
+	lab var vor_y1 "Voronoi: start y-coord"
+	lab var vor_x2 "Voronoi: end x-coord"
+	lab var vor_y2 "Voronoi: end y-coord"	
+	
 	di "Voronoi: Done"
 	
 end	

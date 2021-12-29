@@ -1,5 +1,5 @@
-*! Ver 1.02 26.12.2021. Asjad Naqvi. rescale added.
-*  Ver 1.01 20.12.2021. Asjad Naqvi. if/in & notes by wbuchanan
+*! Ver 1.02 Asjad Naqvi 26.12.2021. rescale added. if optional
+*  Ver 1.01 Asjad Naqvi 20.12.2021. if/in & notes by wbuchanan
 *  Ver 1.00 22.11.2021 first run
 
 
@@ -10,7 +10,7 @@
 *     Asjad Naqvi       *
 *                       * 
 *    Last updated:      *
-*     27 Dec 2021       *
+*     29 Dec 2021       *
 *			            * 
 *************************
 
@@ -24,8 +24,8 @@ prog def delaunay, eclass sortpreserve
 	version 15
 	
 	// Defines the syntax used to call the program and includes the if/in option
-	syntax varlist(min = 2 max = 2 numeric) [if] [in], id(varname numeric) 	 ///   
-	[TRIangles Hull VORonoi REScale] ///
+	syntax varlist(min = 2 max = 2 numeric) [if] [in],	 ///   
+		[ REScale TRIangles Hull VORonoi ] ///
 	
 	
 	
@@ -34,13 +34,10 @@ prog def delaunay, eclass sortpreserve
 	// Parses the variable list into `x' and `y'
 	gettoken x y : varlist
 	
-	// Since the ID variable is a required argument, this will always be true
-	if `id' sort `id'
+	// ID is not really necessary but it helps
+		gen _id = _n
+		lab var _id "observation id"
 	
-	// This condition will never be met unless the ID argument is optional
-	// Since the temp ID being generated in this instance is based on _n it will
-	// by definition already be sorted
-	else g _id = _n
 		
 	// Mark the observations that should be used for the program
 	marksample touse, strok
@@ -51,7 +48,7 @@ prog def delaunay, eclass sortpreserve
 	// convert the options below to an initialization program
 	
 	mata: points   = select(st_data(., ("`x'", "`y'")), st_data(., "`touse'"))
-	mata: myminmax = colminmax(points)
+	//mata: myminmax = colminmax(points)
 	
 	// rescale x and y axes to match
 	
@@ -103,9 +100,9 @@ prog def delaunay, eclass sortpreserve
 
 	// if these are defined, push to them to the dataset	
 
-	if "`triangles'" != "" add_triangles
-	if "`hull'" 	 != "" add_hull
-	if "`voronoi'" 	 != "" voronoi
+	if "`triangles'" != ""  add_triangles
+	if "`hull'" 	 != ""  add_hull
+	if "`voronoi'" 	 != ""  voronoi
 	
 // End of program declaration
 end
@@ -987,6 +984,10 @@ program define add_triangles
 	cap drop tri* // make sure the variables are clear
 	
 	qui svmat triangles, n(col)
+		lab var tri_num "Triangle: number"
+		lab var tri_id  "Triangle: point id"
+		lab var tri_x   "Triangle: x-coord"
+		lab var tri_y   "Triangle: y-coord"
 
 	// drop the junk
 	mata: mata drop triangles2 triangles3 triangles4 triangles5 
@@ -1027,10 +1028,16 @@ program define add_hull
 
 cap drop hull* // make sure the variables are clear
 
-mata: myhull = fixhull(hull,points)
-mata st_matrix("hull", myhull)
-mat colnames hull = "hull_num" "hull_id" "hull_x" "hull_y"
-svmat hull, n(col)
+	mata: myhull = fixhull(hull,points)
+	mata st_matrix("hull", myhull)
+	mat colnames hull = "hull_num" "hull_id" "hull_x" "hull_y"
+	svmat hull, n(col)
+
+		lab var hull_num "Hull: number"
+		lab var hull_id  "Hull: point id"
+		lab var hull_x   "Hull: x-coord"
+		lab var hull_y   "Hull: y-coord"
+
 end
 
 

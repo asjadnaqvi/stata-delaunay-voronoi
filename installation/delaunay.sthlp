@@ -17,15 +17,13 @@ especially if there are more than 10,000 triangles.
 
 {marker syntax}{title:Syntax}
 {p 8 15 2}
-{cmd:delaunay} {it:x y} [if] [in], id({it:id}) [{cmdab:res:cale}] [{cmdab:tri:angles}] [{cmdab:h:ull}] [{cmdab:vor:onoi}]
+{cmd:delaunay} {it:x y} [if] [in], [{cmdab:res:cale}] [{cmdab:tri:angles}] [{cmdab:h:ull}] [{cmdab:vor:onoi}]
 
 {synoptset 36 tabbed}{...}
 {synopthdr}
 {synoptline}
 
 {p2coldent : {opt delauay x y}}The command requires an {it:(x,y)} coordinate pair stored as two numeric variables. Please make the order sequence of the variables is correct.{p_end}
-
-{p2coldent : {opt id(id)}}This variable contains the sequence order of the coordinate pairs. This should be sorted and without gaps. (Still need to add options to check and parse this correctly in Mata){p_end}
 
 {p2coldent : {opt res:cale}} Delaunay triangles, and subsequently Voronoi tessellations, are not agnostic about the scale of the x and y-axis. They were designed to deal with physical geometry and therefore expect x and y values to be on a similar scale. If we are working with data where one variable is several times the magnitude of the second, then the command will correctly execute the triangles but they will be highly stretched in one direction. The {it:rescale} option normalizes both the x and y variables on a common range, calculates the triangles and rescales them back to provide reasonable looking triangles. {p_end}
 
@@ -39,7 +37,10 @@ especially if there are more than 10,000 triangles.
 {p2colreset}{...}
 
 {p 4 4 2}
-If no options are specified, then nothing is returned. The triangles, the convex hull, and the voronoi lines are stored as Stata matrices (type mat dir), that can be extracted later if required.
+The program will by default generate a variable {it:_id} for internal tracking of observations. If no options are specified, then nothing is returned. The triangles, the convex hull, and the voronoi lines are also stored as Stata matrices (type mat dir), that can be extracted later if required. 
+
+{p 4 4 2}
+If the {it:triangle}, {it:hull} and/or {it:voronoi} options are specified, then the coordinates of the vertices or edges are returned together with their respective ids which can be matched to the {it:_id} variable. 
 
 
 {title:Known issues}
@@ -49,7 +50,7 @@ If no options are specified, then nothing is returned. The triangles, the convex
 
 {title:Version history}
 
-    {bf:1.02}: Rescale function added. Further code improvements.
+    {bf:1.02}: Rescale function added. id option removed. The program generates its own _id variable. Further code improvements.
     {bf:1.01}: Minor code cleanups. [if] [in] conditions added by wbuchanan. 
     {bf:1.00}: First release
 

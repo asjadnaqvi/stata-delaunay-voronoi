@@ -22,10 +22,10 @@ The force option ensures that the files are replaced even if Stata thinks they a
 The syntax is:
 
 ```applescript
-delaunay x y [if] [in], id(id) [rescale] [triangles] [hull] [voronoi]
+delaunay x y [if] [in], [rescale] [triangles] [hull] [voronoi]
 ```
 
-where `x` and `y` are coordinates. `id` is the serial identifier of each point. The last three options export the `triangles`, `hull`, and `voronoi` back to Stata for plotting.
+where `x` and `y` are coordinates. If the x and y coordinates do not have similar value ranges, then rescale normalizes to the same interval calculates the triangles and rescales them back. The last three options export the `triangles`, `hull`, and `voronoi` back to Stata for plotting.
 
 See the help files for details:
 
@@ -48,20 +48,13 @@ gen y = runiform(0,100)
 
 // create a donut (if you want)
 drop if sqrt((x-50)^2 + (y-50)^2) > 50
-
-local obs = _N 
-di `obs'
-gen id = _n
-order id
-
-mat drop _all
 ```
 
 
 Export everything back to Stata:
 
 ```applescript
-delaunay x y, id(id) triangles hull voronoi
+delaunay x y, triangles hull voronoi
 ```
 
 Plot the triangles and the hull:
@@ -94,9 +87,9 @@ Plot the Voronoi tessellations:
 
 ### 1.02
 
-Added the **rescale** option. From the help file: 
+Added the **rescale** option and removed the id requirement. The program now generates its own _id variable. From the help file: 
 
-> Delaunay triangles, and subsequently Voronoi tessellations, are not agnostic about the scale of the x and y-axis. They were designed to deal with physical geometry and therefore expect x and y values to be on a similar scale. If we are working with data where one variable is several times the magnitude of the second, then the command will correctly execute the triangles but they will be highly stretched in one direction. The *rescale* option normalizes both the x and y variables on a common range, calculates the triangles and rescales them back to provide reasonable looking triangles.
+> Delaunay triangles, and subsequently Voronoi tessellations, are not agnostic about the scale of the x and y-axis. They were designed to deal with physical geometry and therefore expect x and y values to be on a similar scale. If we are working with data where one variable is several times the magnitude of the other, then the command will correctly execute the triangles but they will be stretched in one direction. The *rescale* option normalizes both the x and y variables on a common range, calculates the triangles and rescales them back to provide reasonable looking triangles.
 
 Let's test the following example where the yaxis is scaled up:
 
@@ -105,7 +98,6 @@ clear
 
 
 set obs 20
-gen id = _n
 
 set seed 103
 
@@ -121,7 +113,7 @@ cap drop y2
 
 // without rescaling
 
-delaunay x y2, id(id) tri hull vor 
+delaunay x y2, tri hull vor 
 
 	twoway (scatter y2 x, msize(small)) ///
 		(line hull_y hull_x, lw(thin)) ///
@@ -138,7 +130,7 @@ delaunay x y2, id(id) tri hull vor
 
 // with rescaling
 
-delaunay x y2, id(id) tri hull vor rescale
+delaunay x y2, tri hull vor rescale
 
 	twoway (scatter y2 x, msize(small)) ///
 		(line hull_y hull_x, lw(thin)) ///
