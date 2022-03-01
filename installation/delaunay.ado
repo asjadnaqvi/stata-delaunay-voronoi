@@ -1,57 +1,53 @@
-*! Ver 1.02 Asjad Naqvi 26.12.2021. rescale added. if optional
-*  Ver 1.01 Asjad Naqvi 20.12.2021. if/in & notes by wbuchanan
-*  Ver 1.00 22.11.2021 first run
+*! Delaunay triangulation
+*! by Asjad Naqvi (asjadnaqvi@gmail.com, @AsjadNaqvi)
+*!
+*! Ver 1.10 01.03.2022: missing triangles fixed. rays fixed. 
+*  Ver 1.02 27.12.2021: rescale added. if made optional
+*  Ver 1.01 20.12.2021: if/in & notes by wbuchanan
+*  Ver 1.00 22.11.2021: first release
 
 
-*************************
-*                       *
-*    S-Hull Delaunay    *
-*          by           *
-*     Asjad Naqvi       *
-*                       * 
-*    Last updated:      *
-*     29 Dec 2021       *
-*			            * 
-*************************
+**************************
+**************************
+**                      **
+**       Delaunay       **
+**						**
+**     Asjad Naqvi      **
+**                      ** 
+**    Last updated:     **
+**     01 Mar 2022      **
+**			            ** 
+**    First release:    **
+**     22 Nov 2021      **
+**			            ** 
+**************************
+**************************
 
-// Drops the program from memory if already loaded
+
 cap prog drop delaunay
-
 
 prog def delaunay, eclass sortpreserve
 
-	// Version control statement
 	version 15
 	
-	// Defines the syntax used to call the program and includes the if/in option
 	syntax varlist(min = 2 max = 2 numeric) [if] [in],	 ///   
-		[ REScale TRIangles Hull VORonoi ] ///
+		[ REScale TRIangles Hull VORonoi(namelist min=1 max=2) ] [OFFset(real 0.05)] 
 	
-	
-	
+
 	di "Delaunay: Initializing"
 	
-	// Parses the variable list into `x' and `y'
 	gettoken x y : varlist
 	
-	// ID is not really necessary but it helps
+	// generate an internal _id variable
 		cap drop _id
 		gen _id = _n
 		lab var _id "observation id"
 	
-		
-	// Mark the observations that should be used for the program
 	marksample touse, strok
 	
 	
-	// get everything in order
-	
-	// convert the options below to an initialization program
-	
+
 	mata: points   = select(st_data(., ("`x'", "`y'")), st_data(., "`touse'"))
-	//mata: myminmax = colminmax(points)
-	
-	// rescale x and y axes to match
 	
 	if "`rescale'" != "" {	
 		mata: points2 = points  // create a copy
@@ -62,11 +58,10 @@ prog def delaunay, eclass sortpreserve
 		mata: points2 = points
 	}
 	
-	
 	mata: eps          = 1e-20
 	mata: edgestack    = J(512, 1, .) 
 	mata: coords       = initialize(points2)
-	mata: num          = rows(coords) / 2
+	mata: num          = rows(points2)   // updated
 	mata: maxTriangles = max(((2 * num) - 5, 0)) 
 	
 	// core arrays
@@ -88,30 +83,62 @@ prog def delaunay, eclass sortpreserve
 	mata: dists = J(num, 1, .)
 	
 	
-	// di "Delaunay: Starting core routines"
+	di "Starting core routines"
 
 	// run the core routine 
 
 	mata: _delaunay_core(coords, ids, dists, triangles, halfedges, hull, hullNext,  ///   
 				  hullPrev, hullTri, hullHash, hashSize, eps, edgestack)
 
-	*****************************
-	***  add variables here   ***
-	*****************************
+	**************************
+	***  export geometry   ***
+	**************************
 
-	// if these are defined, push to them to the dataset	
-
-	if "`triangles'" != ""  add_triangles
-	if "`hull'" 	 != ""  add_hull
-	if "`voronoi'" 	 != ""  voronoi
+	di "Exporting geometry"
 	
-// End of program declaration
+	
+	// delaunay triangles
+	if "`triangles'" != ""  add_triangles
+	
+	// convex hull
+	if "`hull'" 	 != ""  add_hull
+	
+	// voronoi lines and/or polygons
+	
+	// if "`voronoi'" 	 == "" di as err `" You need to specify {ul:lines} or {ul:polygon} or both as options."'
+	
+	local vor_valid = `" "lines", "polygons" "'
+	capt assert inlist( "`voronoi'", `vor_valid')
+
+	/*
+		di "`_rc'"
+		
+		if _rc {
+		
+		di as err `" Valid options for voronoi() are: `vor_valid' or both. "'
+		exit
+		}
+	*/
+	
+	
+	if "`voronoi'" 	!= ""  {
+		if "`offset'" != "" {
+			voronoi, `voronoi' offset(`offset')
+		}
+		else {
+			voronoi, `voronoi'
+		}
+	}
+	
+	di "Done!"
+		
+	
 end
 
 
 
 ************************
-// 	 _delaunay_core	  //  main routine. _update
+// 	 _delaunay_core	  //  main routine
 ************************
 
 cap mata: mata drop _delaunay_core()
@@ -129,7 +156,6 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	maxY = -1e16
 
 	for (i=1; i<= num; i++) {	
-		
 		
 		x = coords[2 * i - 1, 1] 
 		y = coords[2 * i    , 1]
@@ -150,7 +176,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	i1 = 0
 	i2 = 0
 	
-	// pick a seed point close to the center
+	// pick a seed point close to the center (first observation)
 
 	for (i=1; i<=num; i++) {	
 		dval = dist(cx, cy, coords[2 * i - 1], coords[2 * i])
@@ -166,8 +192,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	minDist = .
 
 
-	// find the point closest to the seed
-
+	// find the point closest to the seed (second observation)
 	for (i=1; i<=num; i++) {
 		if (i == i0) continue
 		
@@ -183,7 +208,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	i1y = coords[2 * i1    , 1]
 	minRadius = .
 
-	// find the third point which forms the smallest circumcircle with the first two
+	// find the third point which forms the smallest circumcircle with the first two (third observation)
 	
 	for (i=1; i<=num; i++) {
 		if (i == i0 | i == i1) continue
@@ -199,18 +224,19 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	i2x = coords[2 * i2 - 1, 1]
 	i2y = coords[2 * i2    , 1]		
 
-	if (minRadius == .) {
+	if (minRadius == .) {  // a very large number
 		
+		// calculate the distances ot the points with the first point	
 		for (i=1; i<=num; i++) {
-			dists[i,1] = (coords[2 * i - 1, 1] - coords[1, 1]) | (coords[2 * i, 1] - coords[2,1])  
+			dists[i,1] = (coords[2 * i - 1, 1] - coords[1, 1]) | (coords[2 * i, 1] - coords[2, 1])  
 		}
 		
-		
+		// and order them
 		_quicksort(ids, dists, 1, num - 1)  
 		
 		hull =  J(num, 1, .)
 		j = 1
-		d0 = -1e-16  // minus infinity
+		d0 = -1e20  // minus infinity
 
 		for (i=1; i <= num; i++) {   
 			id = ids[i,1]
@@ -222,9 +248,10 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 			}
 		}
 	
-	hull = hull[1..j,1]  
-	triangles =  .  	
-	halfedges =  .	
+		// initiatte the hull, triangle, and halfedges matrices 
+		hull = hull[1..j,1]  
+		triangles =  .  	
+		halfedges =  .	
 	}
 
 
@@ -235,16 +262,16 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 		x = i1x
 		y = i1y
 		
-		i1 = i2
+		i1  = i2
 		i1x = i2x
 		i1y = i2y
 		
-		i2 = i
+		i2  = i
 		i2x = x
 		i2y = y		
 	}
 
-	c0x = .   // blanks to be evaluated
+	c0x = .   // blanks to be evaluated in circumcenter below
 	c0y = .
 		
 	circumcenter(i0x, i0y, i1x, i1y, i2x, i2y, c0x, c0y)
@@ -255,7 +282,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	}
 	
 	// sort the points by distance from the seed triangle circumcenter
-	_quicksort(ids, dists, 1, num - 1)  // num changed to num - 1
+	_quicksort(ids, dists, 1, num-1)  // num changed to num - 1
 
 	
 	// set up the seed triangle as the starting hull
@@ -289,44 +316,50 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	// dump is just a dummy to prevent the function from returning a value on the screen
 	dump = addTriangle(triangles,trianglesLen,halfedges, i0, i1, i2, -1, -1, -1)   
 
-	
 	xp=.
 	yp=.
 
 	
+	///////////////////////////////////
+	///       main loop below       ///
+	///////////////////////////////////
 	
-	for (k=1; k <= rows(ids); k++) {
+	for (k=1; k <= rows(ids); k++) {   // evalaute the sorted points
+		
 		i = ids[k,1]
 		x = coords[2 * i - 1, 1]
 		y = coords[2 * i	, 1]
 			
-		
-		// skip near-duplicate points
+		// skip near-duplicate points 
 		if ((k > 1) & (abs(x - xp) <= eps) & (abs(y - yp) <= eps)) continue
 		
 		xp = x
 		yp = y
 		
+		
 		// skip seed triangle points
 		if ((i == i0) | (i == i1) | (i == i2)) continue
 		
+		
+		
 		// find a visible edge on the convex hull using edge hash
 		start = 1
-		key = hashKey(x,y,c0x,c0y,hashSize)
+		key = hashKey(x, y, c0x, c0y, hashSize)
 
-		for (j=1; j<=hashSize; j++) {			
+		for (j=1; j <= hashSize; j++) {			
 			start = hullHash[(mod((key + j - 1), hashSize) + 1),1] 				
-		
-			
+
 			if ((start != -1) & (start != hullNext[max((start,1)), 1])) break  // added max to prevent the 0 argument
 		}
+		
 
 		start = hullPrev[start,1]
 		emp = start                		
 		
 		www = 0 // while		
 		
-		while (www == 0) {
+		
+		while (www == 0) {  // here is where points are being dropped
 			q = hullNext[emp,1]
 			if (orient(x, y, coords[2 * emp - 1], coords[2 * emp], coords[2 * q - 1], coords[2 * q])) break		
 			emp = q
@@ -337,7 +370,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 			}
 		}
 
-	
+
 		if (emp == -1) continue	
 		
 		
@@ -345,19 +378,18 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 		
 		t = addTriangle(triangles, trianglesLen, halfedges, emp, i, hullNext[emp,1], -1, -1, hullTri[emp,1])
 		
-		
 		// recursively flip triangles from the point until they satisfy the Delaunay condition
-		hullTri[i  , 1] = legalize(t + 2,coords, halfedges, edgestack, triangles, hullStart, hullTri, hullPrev)			
+		hullTri[i  , 1] = legalize(t + 2, coords, halfedges, edgestack, triangles, hullStart, hullTri, hullPrev)			
 		hullTri[emp, 1] = t 
 		hullSize = hullSize + 1	
 		
 		// walk forward through the hull, adding more triangles and flipping recursively
-		num = hullNext[emp,1]
+		num = hullNext[emp, 1]
 	
-		www = 0 // for the inifinite while loop.
+		www = 0 // for the infinite while
 		while (www == 0) {
 			
-			q  = hullNext[num,1]	
+			q  = hullNext[num, 1]	
 
 			if (orient(x, y, coords[2 * num - 1,1], coords[2 * num,1], coords[2 * q - 1,1], coords[2 * q,1]) == 0) break					
 			t = addTriangle(triangles,trianglesLen, halfedges,num, i, q, hullTri[i,1], -1, hullTri[num,1])	
@@ -376,9 +408,9 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 				q = hullPrev[emp,1]
 				
 				if ((orient(x, y, coords[2 * q - 1], coords[2 * q], coords[2 * emp - 1], coords[2 * emp])) == 0) break
-				t = addTriangle(triangles,trianglesLen, halfedges,q, i, emp, -1, hullTri[emp,1], hullTri[q,1])
+				t = addTriangle(triangles, trianglesLen, halfedges, q, i, emp, -1, hullTri[emp,1], hullTri[q,1])
 				
-				dump = legalize(t + 2,coords,halfedges, edgestack, triangles, hullStart, hullTri, hullPrev)
+				dump = legalize(t + 2, coords, halfedges, edgestack, triangles, hullStart, hullTri, hullPrev)
 				
 				hullTri[q,1] = t
 				hullNext[emp,1] = emp // mark as removed
@@ -387,6 +419,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 				
 			}
 		}		
+		
 		
 		// update the hull indices
 		hullStart 			= emp
@@ -397,10 +430,9 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 
 		// save the two new edges in the hash table
 		hullHash[hashKey(x,y,cx,cy,hashSize) + 1,1] = i				
-		hullHash[hashKey(coords[2 * emp - 1,1],coords[2 * emp,1],cx,cy,hashSize) + 1,1] = emp		
+		hullHash[hashKey(coords[2 * emp - 1,1], coords[2 * emp,1],cx,cy,hashSize) + 1,1] = emp		
 
 	}
-	
 	
 	
 	hull = J(hullSize,1,.)
@@ -518,8 +550,8 @@ function legalize(real scalar a, real vector coords, halfedges, edgestack, trian
              
             */
 	
-		a0 =  a - mod(a - 1,3)  	// mod(a,3)
-		ar = a0 + mod((a + 1),3)  	//+ mod((a + 2),3)
+		a0 =  a - mod(a - 1, 3)  	// mod(a,3)
+		ar = a0 + mod(a + 1, 3)  	//+ mod((a + 2),3)
 	
 		if (b == -1) { //  convex hull edge
 			if (i == 1) break
@@ -551,9 +583,7 @@ function legalize(real scalar a, real vector coords, halfedges, edgestack, trian
 			hbl = halfedges[bl, 1]		
 			
 			// edge swapped on the other side of the hull (rare); fix the halfedge reference
-			
-			
-			
+
 			if (hbl == -1) {
 				eme = hullStart  
 				
@@ -569,13 +599,9 @@ function legalize(real scalar a, real vector coords, halfedges, edgestack, trian
 				}
 			}
 			
-			
-
 			_link(halfedges,a, hbl)
 			_link(halfedges,b, halfedges[ar, 1])
 			_link(halfedges,ar, bl)
-		
-			
 		
 			brme = b0 + mod(b,3) 
 		
@@ -619,7 +645,7 @@ end
 
 cap mata: mata drop addTriangle()
 
-mata: // _addTriangle
+mata: // addTriangle
 function addTriangle(triangles, trianglesLen, halfedges, i0, i1, i2, a, b, c)
 {
         real scalar t
@@ -639,9 +665,9 @@ function addTriangle(triangles, trianglesLen, halfedges, i0, i1, i2, a, b, c)
 end
 
 
-************************
+****************
 // 	   dist	  //
-************************
+****************
 
 cap mata: mata drop dist()
 
@@ -652,7 +678,7 @@ real vector dist(ax, ay, bx, by)
 	dx = ax - bx
 	dy = ay - by
 
-	return((dx * dx) + (dy * dy))
+	return(dx*dx + dy*dy)
 }
 end
 
@@ -663,7 +689,7 @@ end
 
 cap mata: mata drop orientIfSure()
 
-mata:  // orientIfSure
+mata: // orientIfSure
 function orientIfSure(px, py, rx, ry, qx, qy)
 {
 	real scalar left, right
@@ -673,7 +699,7 @@ function orientIfSure(px, py, rx, ry, qx, qy)
 
     
 	// J. Shewchuk error bound check
-	if (abs(left - right) >= 3.3306690738754716e-16 * abs(left + right)) {
+	if (abs(left - right) >= (3.3306690738754716e-16 * abs(left + right))) {
         return(left - right)
 	}
     else {
@@ -731,7 +757,7 @@ function inCircle(ax, ay, bx, by, cx, cy, px, py)
 end
 
 
-*************************
+************************
 // 	   circumradius	  //		
 ************************
 
@@ -790,15 +816,15 @@ end
 // 	   quicksort   	  //   
 ************************
 
-cap mata: mata drop _quicksort()
+cap mata: mata drop _quicksort()  // function updated
 
-mata: // _quicksort
+mata: // quicksort
 void _quicksort(ids, dists, left, right)
 {
     
 	real scalar i, temp, tempDist, j, medianme, xxx, yyy, zzz
 	
-	if ((right - left) <= 20) {
+//	if ((right - left) <= 20) {  // taken out completely. was causing points to be dropped or not sorted correctly
 		for (i = left + 1; i <= right + 1; i++) {
             
 			temp = ids[i,1]
@@ -812,53 +838,6 @@ void _quicksort(ids, dists, left, right)
 			
             ids[j + 1,1] = temp
 		}
-	}	
-	else {
-			
-		medianme = floor((left + right) / 2)
-        i = left + 1
-        j = right
-        	
-		swapme(ids, medianme, i)
-
-		if (dists[ids[left,1],1] > dists[ids[right,1],1]) swapme(ids, left, right)
-		if (dists[ids[i   ,1],1] > dists[ids[right,1],1]) swapme(ids,    i, right)	
-		if (dists[ids[left,1],1] > dists[ids[i    ,1],1]) swapme(ids, left,     i)		
-		
-		temp = ids[i,1]
-		tempDist = dists[temp,1]
-		
-		xxx = 0
-		while (xxx==0) {						
-			yyy = 0
-			while (yyy==0) {
-				i = i + 1
-				if (dists[ids[i,1],1] >= tempDist) break
-			}
-			
-			zzz = 0
-			while (zzz==0) {
-				j = j - 1			
-				if (dists[ids[j,1],1] <= tempDist) break
-			}	
-			
-			if (j < i) break
-			swapme(ids, i, j)				
-		}
-		
-			
-		ids[left + 1, 1] = ids[j, 1]
-		ids[j,1] = temp
-		
-		if ((right - i + 1) >= (j - left)) {
-			_quicksort(ids, dists,    i, right)
-			_quicksort(ids, dists, left, j - 1)
-		}
-		else {
-			_quicksort(ids, dists, left, j - 1)
-			_quicksort(ids, dists,    i, right)
-		}
-	}
 }
 end
 
@@ -874,7 +853,8 @@ mata: // swapme
 function swapme(arr,i,j)
 {
 	real scalar tmp1
-	tmp1 = arr[i,1]
+	
+	tmp1     = arr[i,1]
     arr[i,1] = arr[j,1]
     arr[j,1] = tmp1
 }
@@ -891,7 +871,6 @@ mata: // rescale
 real vector rescale(points, a, b)
 {
 	newpoints = (b - a) * (points :- colmin(points)) :/ (colmax(points) - colmin(points)) :+ a
-	
 	return(newpoints)
 }
 end
@@ -901,10 +880,6 @@ end
 ********************************
 ***    END OF SUBROUTINES    ***
 ********************************
-
-
-
-
 
 
 
@@ -986,12 +961,14 @@ program define add_triangles
 	
 	qui svmat triangles, n(col)
 		lab var tri_num "Triangle: number"
-		lab var tri_id  "Triangle: point id"
-		lab var tri_x   "Triangle: x-coord"
-		lab var tri_y   "Triangle: y-coord"
+		lab var tri_id  "Triangle: _id"
+		lab var tri_x   "Triangle: x"
+		lab var tri_y   "Triangle: y"
 
 	// drop the junk
 	mata: mata drop triangles2 triangles3 triangles4 triangles5 
+	cap drop tri_num  // dud
+	
 end
 
 
@@ -1000,7 +977,7 @@ end
 // 	   hull  	  //  
 ********************
 
-//// export the hull
+
 
 cap mata: mata drop fixhull()
 
@@ -1010,7 +987,7 @@ function fixhull(hull,points)
 	// duplicate the first observation
 	hull2 = hull \ . 
 	hull2[rows(hull2),1] = hull[1,1]
-	hull3 = J(rows(hull2),1,.),hull2, J(rows(hull2),2,.)
+	hull3 = J(rows(hull2),1,.), hull2, J(rows(hull2),2,.)
 
 
 		for (i = 1; i <= rows(hull2); i++ ) { 
@@ -1021,6 +998,9 @@ function fixhull(hull,points)
 }
 end
 
+**********************
+// export the hull  //
+**********************
 
 cap program drop add_hull
 program define add_hull
@@ -1035,10 +1015,12 @@ cap drop hull* // make sure the variables are clear
 	svmat hull, n(col)
 
 		lab var hull_num "Hull: number"
-		lab var hull_id  "Hull: point id"
+		lab var hull_id  "Hull: _id"
 		lab var hull_x   "Hull: x-coord"
 		lab var hull_y   "Hull: y-coord"
-
+		
+		cap drop hull_num  // don't really need it
+		
 end
 
 

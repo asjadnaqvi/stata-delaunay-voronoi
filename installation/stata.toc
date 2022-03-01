@@ -1,6 +1,8 @@
-v 1.0
-d DELAUNAY: Delaunay triangulation, voronoi tessellation, convex hull
-d
+v 1.10
+d DELAUNAY: Delaunay triangulation, Voronoi tessellation, Convex hull
+d  
+d This  version: 01 Mar 2022
+d First version: 22 Nov 2021
 d
 d Asjad Naqvi, 
 d WU Vienna/IIASA, Austria
