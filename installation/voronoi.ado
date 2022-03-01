@@ -805,6 +805,7 @@ program define vorpoly
 			tempfile _raw
 			keep _id x y
 			qui drop if _id==.
+			qui drop if x==.   // this ensures that _id remains unique. especially if shapes are drawn sequentially.
 			ren _id vpoly_id
 			save `_raw', replace
 		restore
