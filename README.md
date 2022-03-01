@@ -35,7 +35,9 @@ help delaunay
 
 The summary of the options are as follows:
 
-|---|---|
+
+| Option | Description |
+| --- |--- |
 | rescale | If the x and y coordinates do not have similar value ranges, then rescale normalizes to the same interval calculates the triangles and rescales them back. |
 | triangles | exports back the delaunay triangles as shapes |
 | hull | exports back the hull as line coordinates |
