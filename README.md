@@ -275,21 +275,12 @@ The [if] [in] options were added to the program based on wbuchanan's suggestions
 
 First release.
 
-## Known issues
 
-1.   For some point combinations, the last point is being skipped from triangles.  
-2.   For some Voronoi lines on the edges, the infinite rays are not being calculated.
+## The to do list
 
-
-## In the pipeline
-
-1.   The above errors.  
-2.   Add [if] [in] options. DONE. 
-3.   Add an option to check and correct indices.  
-4.   Get rid of Mata junk 
-5.   Separate the Mata calculations from export back to Stata. 
-6.   Call the *clipline* command from within the program, and add box options.  
-7.   Convert Voronoi lines to shapes for more interesting visualizations.  
-8.   Add e-class locals.
+1.   Add checks and error returns.
+2.   Get rid of Mata junk. 
+3.   Optimize export back to Stata from Mata. Currently it is very slow.
+4.   Add e-class locals.
 
 
