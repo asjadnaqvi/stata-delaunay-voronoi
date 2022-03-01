@@ -86,7 +86,7 @@ See the stored matrices:
 		legend(off) aspect(1) xsize(1) ysize(1) 
 ```
 
-<img src="/figures/delaunay_hull.png" height="500">
+<img src="/figures/delaunay_hull.png" height="600">
 
 
 ## Delaunay triangles
@@ -101,7 +101,7 @@ See the stored matrices:
 ```
 
 
-<img src="/figures/delaunay_triangles.png" height="500">
+<img src="/figures/delaunay_triangles.png" height="600">
 
 ## Voronoi tessellations
 
@@ -116,7 +116,7 @@ See the stored matrices:
 		legend(off)	aspect(1) xsize(1) ysize(1) 
 ```
 
-<img src="/figures/delaunay_voronoi_lines.png" height="500">
+<img src="/figures/delaunay_voronoi_lines.png" height="600">
 
 ### Polygons
 
@@ -129,7 +129,7 @@ See the stored matrices:
 		legend(off) aspect(1) xsize(1) ysize(1) 
 ```
 
-<img src="/figures/delaunay_voronoi_polygons.png" height="500">
+<img src="/figures/delaunay_voronoi_polygons.png" height="600">
 
 
 ### Color fill polygons
@@ -170,7 +170,7 @@ foreach x of local lvls {
 		legend(off)	aspect(1) xsize(1) ysize(1) 	
 ```
 
-<img src="/figures/delaunay_voronoi_polygons_colors.png" height="500">
+<img src="/figures/delaunay_voronoi_polygons_colors.png" height="600">
 
 
 ## Versions
