@@ -33,7 +33,7 @@ See the help files for details:
 help delaunay
 ```
 
-The summary of the options are as follows:
+The summary of options is as follows:
 
 
 | Option | Description |
@@ -49,7 +49,7 @@ All options are optional. If none are specified, then nothing is added back to t
 
 ## Test the package:
 
-You can use the above do file for test the code. A sample code is provided here:
+You can the following code to test the package:
 
 Generate some random data or use your own coordinates:
 
