@@ -5,7 +5,9 @@
 
 Implementation of the [S-Hull Delaunay](http://www.s-hull.org/) algorithm in Stata. The Convex Hull is generated as a residual from the sweeping search algorithm, and the Voronoi tessellations are recovered as a dual to the Delaunay. 
 
-*Note:* This is a beta release and still needs to be improved. It has been uploaded here for testing purposes only. Feedback is always welcome!
+*Note:* 
+-   This is a beta release and still needs to be improved. It has been uploaded here for testing purposes only. Feedback is always welcome!
+-   The package now requires **gtools** for fast reshaping (ssc install gtools, replace)
 
 
 ## Install the package:
