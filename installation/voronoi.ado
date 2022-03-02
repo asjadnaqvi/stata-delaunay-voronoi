@@ -218,18 +218,7 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs)
 
 	// cliplist = select(cliplist, (cliplist[.,2] :< .)) // drop the missing rows	
 	
-	xminr = .
-	xmaxr = .
-	yminr = .
-	ymaxr = .
-	
-	bounds(points, xminr, xmaxr, yminr, ymaxr, offs) 
-	
-	cliplist[.,1] = rescale2(cliplist[.,1], xmin, xmax, xminr, xmaxr)
-	cliplist[.,2] = rescale2(cliplist[.,2], ymin, ymax, yminr, ymaxr)
-	cliplist[.,3] = rescale2(cliplist[.,3], xmin, xmax, xminr, xmaxr)
-	cliplist[.,4] = rescale2(cliplist[.,4], ymin, ymax, yminr, ymaxr)	
-	
+
 	
 	// wrong points are evaluated for some lines. drop them from the graphs
 	// this is some error in the clipline. it is evaluating a wrong point on the line which should be dropped.
@@ -245,6 +234,21 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs)
 				cliplist[i,4] = .
 			}			
 		}	
+
+		
+	xminr = .
+	xmaxr = .
+	yminr = .
+	ymaxr = .
+	
+	bounds(points, xminr, xmaxr, yminr, ymaxr, offs) 
+	
+	
+	// rescale back from [0,1] to the original domain
+	cliplist[.,1] = rescale2(cliplist[.,1], xmin, xmax, xminr, xmaxr)
+	cliplist[.,2] = rescale2(cliplist[.,2], ymin, ymax, yminr, ymaxr)
+	cliplist[.,3] = rescale2(cliplist[.,3], xmin, xmax, xminr, xmaxr)
+	cliplist[.,4] = rescale2(cliplist[.,4], ymin, ymax, yminr, ymaxr)			
 		
 	
 	// export the voronoi lines
@@ -330,6 +334,11 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs)
 	}
 	
 	vorpoly2 = select(vorpoly2, (vorpoly2[.,2] :< .)) // drop the missing rows	
+	
+	// rescale them back
+	vorpoly2[.,2] = rescale2(vorpoly2[.,2], xmin, xmax, xminr, xmaxr)
+	vorpoly2[.,3] = rescale2(vorpoly2[.,3], ymin, ymax, yminr, ymaxr)
+	
 	vorpoly2 = vorpoly2, J(rows(vorpoly2),1,1)
 	
 
@@ -822,7 +831,7 @@ program define vorpoly
 			
 			mat colnames vorpolyall = "vpoly_id" "vpoly_x" "vpoly_y" "hull" "angle"
 			
-			cap drop vpoly* // make sure the variables are clear
+			cap drop vpoly_x vpoly_y // make sure the variables are clear
 			svmat vorpolyall, n(col)
 			mat drop vorpolyall
 			
@@ -834,8 +843,8 @@ program define vorpoly
 			// add the corner here
 			cap drop dist*
 
-			bysort vpoly_id: egen double dist_L = min(vpoly_x - xmin)    if hull==1   // left-most   point on x-axis
-			bysort vpoly_id: egen double dist_R = min(xmax    - vpoly_x) if hull==1     // right most  point on x-axis
+			bysort vpoly_id: egen double dist_L = min(vpoly_x - xmin)    if hull==1    // left-most   point on x-axis
+			bysort vpoly_id: egen double dist_R = min(xmax    - vpoly_x) if hull==1    // right most  point on x-axis
 			bysort vpoly_id: egen double dist_B = min(vpoly_y - ymin)	 if hull==1    // bottom-most point on y-axis
 			bysort vpoly_id: egen double dist_T = min(ymax    - vpoly_y) if hull==1    // top-most    point on y-axis
 

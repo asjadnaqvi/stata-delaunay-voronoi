@@ -51,12 +51,25 @@ All options are optional. If none are specified, then nothing is added back to t
 
 ## Test the package:
 
-You can the following code to test the package:
+This section shows code to test the package. In order to replicate the files as they are you need to set the following:
+
+```applescript
+ssc install gtools, replace
+
+ssc install colrspace, replace	
+ssc install palettes , replace	
+
+ssc install schemepack, replace  
+set scheme white_tableau
+
+set seed 7543223
+```
+
 
 Generate some random data or use your own coordinates:
 
 ```applescript
-set obs 500  // have tested up to 10k observations
+set obs 1000  // have tested up to 10k observations
 
 gen x = runiform(0,100)
 gen y = runiform(0,100)
@@ -74,9 +87,7 @@ Export everything back to Stata:
 delaunay x y, triangles hull voronoi(lines poly) offset(0.1)
 ```
 
-See the stored matrices:
-
-
+See the stored matrices by typing `mat dir`.
 
 
 ## Convex hull
@@ -84,9 +95,9 @@ See the stored matrices:
 ```applescript
 	twoway ///
 		(line hull_y hull_x, lw(0.3) lc(orange)) ///
-		(scatter y x , msize(0.4) mc(black) mlab(_id) mlabsize(1.5)) ///
+		(scatter y x , msize(0.4) mc(black) ) ///
 		, ///
-		xlabel(#20) ylabel(#20) ///
+		xlabel(#10, nogrid) ylabel(#10, nogrid) ///
 		legend(off) aspect(1) xsize(1) ysize(1) 
 ```
 
@@ -95,12 +106,12 @@ See the stored matrices:
 
 ## Delaunay triangles
 
-```
+```applescript
 	twoway ///
 		(area tri_y tri_x, cmissing(n) nodropbase fc(gs14%50) lw(0.1) lc(orange)) ///
 		(scatter y x , msize(0.4) mc(black) ) ///
 		, ///
-		xlabel(#20) ylabel(#20) ///
+		xlabel(#10, nogrid) ylabel(#10, nogrid) ///
 		legend(off) aspect(1) xsize(1) ysize(1) 
 ```
 
@@ -113,10 +124,10 @@ See the stored matrices:
 
 ```applescript
 	twoway ///
-		(pcspike vline_y1 vline_x1 vline_y2 vline_x2, lw(0.2) lc(orange)) ///
+		(pcspike vline_y1 vline_x1 vline_y2 vline_x2, lw(0.1) lc(orange)) ///
 		(scatter y x , msize(0.4) mc(black) ) ///
 		, ///
-		xlabel( , nogrid) ylabel( , nogrid) ///
+		xlabel(#10, nogrid) ylabel(#10, nogrid) ///
 		legend(off)	aspect(1) xsize(1) ysize(1) 
 ```
 
@@ -129,7 +140,7 @@ See the stored matrices:
 		(area vpoly_y vpoly_x, cmissing(n) nodropbase fc(gs14%50) lw(0.1) lc(orange)) ///
 		(scatter y x , msize(0.4) mc(black)) ///
 		, ///
-		xlabel(#20) ylabel(#20) ///
+		xlabel(#10, nogrid) ylabel(#10, nogrid) ///
 		legend(off) aspect(1) xsize(1) ysize(1) 
 ```
 
@@ -170,7 +181,7 @@ foreach x of local lvls {
 		`vpoly' ///
 		(scatter y x , msize(0.15) mc(black) ) ///
 		, ///
-		xlabel(#10) ylabel(#10) ///
+		xlabel(#10, nogrid) ylabel(#10, nogrid) ///
 		legend(off)	aspect(1) xsize(1) ysize(1) 	
 ```
 
