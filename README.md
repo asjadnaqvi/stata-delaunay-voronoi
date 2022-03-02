@@ -41,10 +41,10 @@ The summary of options is as follows:
 | Option | Description |
 | --- |--- |
 | rescale | If the x and y coordinates do not have similar value ranges, then rescale normalizes to the same interval calculates the triangles and rescales them back. |
-| triangles | exports back the delaunay triangles as shapes |
-| hull | exports back the hull as line coordinates |
-| voronoi() | exports back the Voronoi as lines or polygons or both |
-| offset()  | Overwrites the clipping box for the Voronoi. Default 5% over the min and max values |
+| triangles | exports back the delaunay triangles as shapes. |
+| hull | exports back the hull as line coordinates. |
+| voronoi() | exports back the Voronoi as *lines* or *polygons* or both. |
+| offset()  | Overwrites the clipping box for the Voronoi. Default is 5% over the (max - min) range. |
 
 All options are optional. If none are specified, then nothing is added back to the data. But all information is stored as Stata matrices (see `mat dir`). The command automatically adds an identifier variable `_id` that can be used to trace back triangles and Voronoi tessellations back to the original observation.
 
