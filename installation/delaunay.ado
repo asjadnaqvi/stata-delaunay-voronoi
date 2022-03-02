@@ -51,8 +51,8 @@ prog def delaunay, eclass sortpreserve
 	
 	if "`rescale'" != "" {	
 		mata: points2 = points  // create a copy
-		mata: points2[.,1] = rescale(points[.,1], 1, 2)
-		mata: points2[.,2] = rescale(points[.,2], 1, 2)
+		mata: points2[.,1] = rescale(points[.,1], 0, 1)
+		mata: points2[.,2] = rescale(points[.,2], 0, 1)
 	}
 	else {
 		mata: points2 = points
