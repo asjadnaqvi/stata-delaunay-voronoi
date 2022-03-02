@@ -30,7 +30,7 @@ cap program drop voronoi
 program define voronoi, eclass sortpreserve
 	version 15
 	
-	syntax , ///
+	syntax varlist(min = 2 max = 2 numeric), ///
 		[ lines 			] ///   // export lines
 		[ POLYgons 			] ///  	// export polygons
 		[ OFFset(real 0.05) ]		// bounding box of the voronoi. default set at +5% * (max - min)
@@ -59,7 +59,7 @@ program define voronoi, eclass sortpreserve
 	
 	
 	if "`polygons'" != "" {
-			vorpoly
+			vorpoly `varlist'
 	}	
 	
 	
@@ -801,9 +801,13 @@ end
 **************************
 
 cap program drop vorpoly
-program define vorpoly
+program define vorpoly 
 	version 15
 
+	syntax varlist(min = 2 max = 2 numeric)
+	
+	gettoken x y : varlist
+	
 	
 	////////////////////////
 	// save the raw data  //
@@ -812,9 +816,9 @@ program define vorpoly
 	qui {
 		preserve
 			tempfile _raw
-			keep _id x y
+			keep _id `varlist'
 			qui drop if _id==.
-			qui drop if x==.   // this ensures that _id remains unique. especially if shapes are drawn sequentially.
+			qui drop if `x'==.   // this ensures that _id remains unique. especially if shapes are drawn sequentially.
 			ren _id vpoly_id
 			save `_raw', replace
 		restore
@@ -897,14 +901,14 @@ program define vorpoly
 
 			merge m:1 vpoly_id using `_raw'
 
-			gen angle = atan2(vpoly_y - y, vpoly_x - x)
+			gen angle = atan2(vpoly_y - `y', vpoly_x - `x')
 
 			gsort vpoly_id -angle
 
 			by vpoly_id: gen order = _n		
 			
 			// drop raw
-			drop x y 
+			drop `varlist' 
 			drop angle
 			
 			// add the corners

@@ -38,6 +38,7 @@ prog def delaunay, eclass sortpreserve
 	
 	gettoken x y : varlist
 	
+		
 	// generate an internal _id variable
 		cap drop _id
 		gen _id = _n
@@ -123,10 +124,10 @@ prog def delaunay, eclass sortpreserve
 	
 	if "`voronoi'" 	!= ""  {
 		if "`offset'" != "" {
-			voronoi, `voronoi' offset(`offset')
+			voronoi `varlist', `voronoi' offset(`offset')
 		}
 		else {
-			voronoi, `voronoi'
+			voronoi `varlist', `voronoi'
 		}
 	}
 	
