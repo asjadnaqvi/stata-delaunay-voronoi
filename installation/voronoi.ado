@@ -48,7 +48,11 @@ program define voronoi, eclass sortpreserve
 	if "`lines'" != "" {
 	
 		mat colnames vorline = "vline_x1" "vline_y1" "vline_x2" "vline_y2"
-		cap drop vor* 
+		cap drop vline_x1
+		cap drop vline_x2
+		cap drop vline_y1
+		cap drop vline_y2
+		
 		svmat vorline, n(col)
 		
 		lab var vline_x1 "Voronoi line: x1"
@@ -835,7 +839,14 @@ program define vorpoly
 			
 			mat colnames vorpolyall = "vpoly_id" "vpoly_x" "vpoly_y" "hull" "angle"
 			
-			cap drop vpoly_x vpoly_y // make sure the variables are clear
+			// make sure the variables are clear
+			cap drop vpoly_id
+			cap drop vpoly_x 
+			cap drop vpoly_y 
+			cap drop hull
+			cap drop angle
+			
+			
 			svmat vorpolyall, n(col)
 			mat drop vorpolyall
 			

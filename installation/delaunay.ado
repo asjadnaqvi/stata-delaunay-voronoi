@@ -40,7 +40,14 @@ prog def delaunay, eclass sortpreserve
 	
 		
 	// generate an internal _id variable
-		cap drop _id
+		
+		cap confirm variable _id
+		
+		if !_rc {
+			drop if _id==.
+			drop _id
+		}
+
 		gen _id = _n
 		lab var _id "observation id"
 	
