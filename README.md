@@ -218,7 +218,7 @@ Major update with several bug fixes and added features:
 
 Added the **rescale** option and removed the id requirement. The program now generates its own _id variable. From the help file: 
 
-> Delaunay triangles, and subsequently Voronoi tessellations, are not agnostic about the scale of the x and y-axis. They were designed to deal with physical geometry and therefore expect x and y values to be on a similar scale. If we are working with data where one variable is several times the magnitude of the other, then the command will correctly execute the triangles but they will be stretched in one direction. The *rescale* option normalizes both the x and y variables on a common range, calculates the triangles and rescales them back to provide reasonable looking triangles.
+> Delaunay triangles, and subsequently Voronoi tessellations, are not agnostic about the scale of the x and y-axis. They were designed to deal with physical geometry and therefore expect x and y values to be on a similar scale. If we are working with data where one variable is several times the magnitude of the other, then the command will correctly execute the triangles but they will be stretched in one direction. The *rescale* option normalizes the x and y variables on a common range, does the calculations, and rescales them back for exporting.
 
 Let's test the following example where the yaxis is scaled up:
 
@@ -237,7 +237,7 @@ gen y = runiform(1, 5)
 foreach i in 1 5 10 {
 
 cap drop y2	
-	gen y2 = y * `i'
+	gen y2 = y * `i'  // scale up the y-axis
 
 
 // without rescaling
