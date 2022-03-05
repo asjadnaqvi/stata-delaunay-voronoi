@@ -73,7 +73,7 @@ set seed 7543223
 Generate some random data or use your own coordinates:
 
 ```applescript
-set obs 1000  // have tested up to 10k observations
+set obs 1000  // works up to 10k observations
 
 gen x = runiform(0,100)
 gen y = runiform(0,100)
@@ -242,7 +242,7 @@ cap drop y2
 
 // without rescaling
 
-delaunay x y2, tri hull vor 
+delaunay y2 x, tri hull vor 
 
 	twoway (scatter y2 x, msize(small)) ///
 		(line hull_y hull_x, lw(thin)) ///
@@ -259,7 +259,7 @@ delaunay x y2, tri hull vor
 
 // with rescaling
 
-delaunay x y2, tri hull vor rescale
+delaunay y2 x, tri hull vor rescale
 
 	twoway (scatter y2 x, msize(small)) ///
 		(line hull_y hull_x, lw(thin)) ///
