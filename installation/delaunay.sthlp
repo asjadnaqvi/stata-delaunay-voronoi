@@ -1,7 +1,7 @@
 {smcl}
-{* 01March2022}{...}
+{* 05March2022}{...}
 {hi:help delaunay}{...}
-{right:{browse "https://github.com/asjadnaqvi/stata-delaunay-voronoi":delaunay v1.10 (GitHub)}}
+{right:{browse "https://github.com/asjadnaqvi/stata-delaunay-voronoi":delaunay v1.11 (GitHub)}}
 
 {hline}
 
@@ -20,7 +20,7 @@ The S-hull is sweep-hull algorithm that iterates across radially sorted points a
 {marker syntax}{title:Syntax}
 {p 8 15 2}
 
-{cmd:delaunay} {it:x y} [if] [in] [, {cmdab:res:cale} {cmdab:tri:angles} {cmdab:h:ull} {cmdab:vor:onoi}({it:lines} {it:{ul:poly}gons}) {ul:off}set({it:value})]
+{cmd:delaunay} {it:y x} [if] [in] [, {cmdab:res:cale} {cmdab:tri:angles} {cmdab:h:ull} {cmdab:vor:onoi}({it:lines} {it:{ul:poly}gons}) {ul:off}set({it:value})]
 
 {p 4 4 2}
 The options inside square brackets [] are optional and are mostly used for exporting the geometries back to Stata. These are described as follows:
@@ -29,7 +29,7 @@ The options inside square brackets [] are optional and are mostly used for expor
 {synopthdr}
 {synoptline}
 
-{p2coldent : {opt delaunay x y}}The command requires an {it:(x,y)} coordinate pair stored as two numeric variables. Please make the order sequence of the variables is correct.{p_end}
+{p2coldent : {opt delaunay y x}}The command requires an {it:(y,x)} coordinate pair stored as two numeric variables. Please make sure that the order of the variables is correct.{p_end}
 
 {p2coldent : {opt res:cale}} Delaunay triangles and Voronoi tessellations are not agnostic about the scale of the axes. They are designed to work with physical geometry and therefore expect x and y axes to be on a similar scale. If we are working with data where one variable is several times the magnitude of the second, then the command will correctly execute the triangles but they might be stretched in one direction. The {it:rescale} option normalizes both the x and y variables on the [0,1] range, calculates the triangles and rescales them back to provide reasonable looking triangles. {p_end}
 
@@ -64,15 +64,17 @@ For code examples, please see the {browse "https://github.com/asjadnaqvi/stata-d
 {p 4 4 2}
 {stata ssc install gtools, replace}
 
+
 {title:To do list}
 
-- Add error checks (currently there are none).
+- Add more error checks.
 - Optimize Mata to Stata export options.
 - Remove redundancies in code.
 
 
 {title:Version history}
 
+- {bf:1.11}: Order of x and y flipped. Faster export to Stata. Error messages added.
 - {bf:1.10}: Delaunay point skipping fixed. Voronoi rays fixed. Voronoi polygons and offset added.
 - {bf:1.02}: Rescale function added. id option removed. The program generates its own _id variable.
 - {bf:1.01}: Minor code cleanups. [if] [in] conditions (thanks to wbuchanan!). 
@@ -82,8 +84,8 @@ For code examples, please see the {browse "https://github.com/asjadnaqvi/stata-d
 
 {title:Package details}
 
-Version      : {bf:delaunay} v1.10
-This release : 01 Mar 2022
+Version      : {bf:delaunay} v1.11
+This release : 05 Mar 2022
 First release: 05 Dec 2021
 Repository   : {browse "https://github.com/asjadnaqvi/stata-delaunay-voronoi":GitHub}
 Keywords     : Stata, delaunay, voronoi, convex hull, s-hull algorithm
@@ -96,7 +98,7 @@ Twitter      : {browse "https://twitter.com/AsjadNaqvi":@AsjadNaqvi}
 
 {title:Want to cite this package?}
 
-{p 4 8 2}Naqvi, A. (2022). Delaunay: A Stata package for Delaunay triangles, Convex Hulls, and Voronoi tessellations. {browse "https://github.com/asjadnaqvi/stata-delaunay-voronoi":https://github.com/asjadnaqvi/stata-delaunay-voronoi}.
+{p 4 8 2}Naqvi, A. (2022). Delaunay v1.11: A Stata package for Delaunay triangles, Convex Hulls, and Voronoi tessellations. {browse "https://github.com/asjadnaqvi/stata-delaunay-voronoi":https://github.com/asjadnaqvi/stata-delaunay-voronoi}.
 
 
 {title:Acknowledgments}
