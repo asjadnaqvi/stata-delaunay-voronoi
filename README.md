@@ -24,10 +24,10 @@ The force option ensures that the package files are replaced even if Stata think
 The syntax is:
 
 ```applescript
-delaunay x y [if] [in], [rescale triangles hull voronoi(lines polygons) offset(value)]
+delaunay y x [if] [in], [rescale triangles hull voronoi(lines polygons) offset(value)]
 ```
 
-where `x` and `y` are coordinates. If the x and y coordinates do not have similar value ranges, then rescale normalizes to the same interval calculates the triangles and rescales them back. The last three options export the `triangles`, `hull`, and `voronoi` back to Stata for plotting.
+where `y` and `x` are coordinates or data points. If `y` and `x` do not have similar value ranges, then rescale normalizes to the same interval calculates the triangles and rescales them back. The next set of options export the `triangles`, `hull`, and `voronoi` back to Stata.
 
 See the help files for details:
 
@@ -40,18 +40,22 @@ The summary of options is as follows:
 
 | Option | Description |
 | --- |--- |
-| rescale | If the x and y coordinates do not have similar value ranges, then rescale normalizes to the same interval calculates the triangles and rescales them back. |
-| triangles | exports back the delaunay triangles as shapes. |
+| rescale | If the `x` and `y` coordinates do not have similar value ranges, then rescale normalizes to the same interval calculates the triangles and rescales them back. |
+| triangles | exports back the Delaunay triangles as shapes. |
 | hull | exports back the hull as line coordinates. |
 | voronoi() | exports back the Voronoi as *lines* or *polygons* or both. |
 | offset()  | Overwrites the clipping box for the Voronoi. Default is 5% over the (max - min) range. |
 
-All options are optional. If none are specified, then nothing is added back to the data. But all information is stored as Stata matrices (see `mat dir`). The command automatically adds an identifier variable `_id` that can be used to trace back triangles and Voronoi tessellations back to the original observation.
+
+*   All options are optional. If none are specified, then nothing is added back to the data. But all information is stored as Stata matrices (see `mat dir`). The command automatically adds an identifier variable `_id` that can be used to trace back triangles and Voronoi tessellations back to the original observation.
+
+
+*   Export the values back to Stata will increase the number of observations.
 
 
 ## Test the package:
 
-This section shows code to test the package. In order to replicate the files as they are you need to set the following:
+This section shows code to test the package. In order to replicate the figures as they are, you need to set the following installed:
 
 ```applescript
 ssc install gtools, replace
