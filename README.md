@@ -88,7 +88,7 @@ drop if sqrt((x-50)^2 + (y-50)^2) < 10
 Export everything back to Stata:
 
 ```applescript
-delaunay x y, triangles hull voronoi(lines poly) offset(0.1)
+delaunay y x, triangles hull voronoi(lines poly) offset(0.1)
 ```
 
 See the stored matrices by typing `mat dir`.
@@ -194,10 +194,17 @@ foreach x of local lvls {
 
 ## Versions
 
+### 1.11 (05 Mar 2022)
+
+Minor update:
+
+*   The input options x and y have been flipped to conform with Stata conventions.
+*   Exporting the geometry back to Stata is now faster.
+*   Some error messages added. Package check for `gtools` added.
 
 ### 1.10 (01 Mar 2022)
 
-Major update with several bug fixes and added features.
+Major update with several bug fixes and added features:
 
 *   Triangles being missed in triangulation fixed
 *   Voronoi rays fixed
