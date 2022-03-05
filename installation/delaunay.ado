@@ -1,6 +1,7 @@
-*! Delaunay triangulation
+*! Delaunay triangulation and convex hull (v1.11)
 *! by Asjad Naqvi (asjadnaqvi@gmail.com, @AsjadNaqvi)
 *!
+*! Ver 1.11 05.03.2022: x and y flipped. faster export to Stata. warnings added.
 *! Ver 1.10 01.03.2022: missing triangles fixed. rays fixed. 
 *  Ver 1.02 27.12.2021: rescale added. if made optional
 *  Ver 1.01 20.12.2021: if/in & notes by wbuchanan
@@ -15,7 +16,7 @@
 **     Asjad Naqvi      **
 **                      ** 
 **    Last updated:     **
-**     01 Mar 2022      **
+**     05 Mar 2022      **
 **			            ** 
 **    First release:    **
 **     22 Nov 2021      **
@@ -34,13 +35,49 @@ prog def delaunay, eclass sortpreserve
 		[ REScale TRIangles Hull VORonoi(namelist min=1 max=2) ] [OFFset(real 0.05)] 
 	
 
-	di "Delaunay: Initializing"
 	
-	gettoken x y : varlist
 	
+	// check gtools
+	capture findfile gtools.ado
+	if _rc != 0 {
+		display as error "gtools package is missing. Click here to install: {stata ssc install gtools, replace}"
+		exit
+	}
+	
+	
+	
+	
+	
+	di _newline
+	di in yellow "Delaunay: Initializing >"
+	
+	marksample touse, strok
+	
+	gettoken y x : varlist
+	
+	local obs1 = _N
+	
+	
+	
+	
+	// advice rescale
+	if "`rescale'" == ""  {
+	
+		qui su `y' if `touse', meanonly
+		local ymean = `r(mean)'
 		
-	// generate an internal _id variable
+		qui su `x' if `touse', meanonly
+		local xmean = `r(mean)'
 		
+		if (`ymean' > 2 * `xmean') | (`xmean' > 2 * `ymean') {
+			di in green "Warning: X and Y are likely not on the same scale. If X and Y are not geographic coordinates," 
+			di in green "then the use of the {ul:rescale} option is highly advised. See documentation."
+			di _newline
+		}
+	}
+	
+	
+	// generate an internal _id variable	
 		cap confirm variable _id
 		
 		if !_rc {
@@ -50,9 +87,6 @@ prog def delaunay, eclass sortpreserve
 
 		gen _id = _n
 		lab var _id "observation id"
-	
-	marksample touse, strok
-	
 	
 
 	mata: points   = select(st_data(., ("`x'", "`y'")), st_data(., "`touse'"))
@@ -91,7 +125,7 @@ prog def delaunay, eclass sortpreserve
 	mata: dists = J(num, 1, .)
 	
 	
-	di "Starting core routines"
+	di in yellow "Starting core routines >"
 
 	// run the core routine 
 
@@ -102,7 +136,7 @@ prog def delaunay, eclass sortpreserve
 	***  export geometry   ***
 	**************************
 
-	di "Exporting geometry"
+	di in yellow "Exporting geometry >"
 	
 	
 	// delaunay triangles
@@ -138,7 +172,9 @@ prog def delaunay, eclass sortpreserve
 		}
 	}
 	
-	di "Done!"
+	local obs2 = _N
+	
+	di in yellow "Done! Observations increased from `obs1' to `obs2'."
 		
 	
 end
@@ -948,7 +984,7 @@ end
 
 
 cap program drop add_triangles
-program define add_triangles
+program define add_triangles, sortpreserve
 	version 15
 
 
@@ -961,13 +997,28 @@ program define add_triangles
 	mata: triangles5 = triindex,triangles4	
 	mata: mytriangles = fixtriangles(triangles5,points)
 	
+	mata: st_local("newobs", strofreal(rows(mytriangles)))
 	
-	mata: st_matrix("triangles", mytriangles)
-	mat colnames triangles = "tri_num" "tri_id" "tri_x" "tri_y"
+	// expand observations (automate this for the custom data range)
+	if `newobs' > _N {
+		qui set obs `newobs'
+	}	
+	
 
-	cap drop tri* // make sure the variables are clear
+	// make sure the variables are clear
+	cap drop tri_num 
+	cap drop tri_id
+	cap drop tri_x
+	cap drop tri_y
 	
-	qui svmat triangles, n(col)
+	if `newobs' > 1 {
+		getmata (tri_num tri_id tri_x tri_y) = mytriangles, force double replace
+	}
+			
+	
+	*mata: st_matrix("triangles", mytriangles)
+	*mat colnames triangles = "tri_num" "tri_id" "tri_x" "tri_y"
+	*qui svmat triangles, n(col)
 		lab var tri_num "Triangle: number"
 		lab var tri_id  "Triangle: _id"
 		lab var tri_x   "Triangle: x"

@@ -1,6 +1,7 @@
-*! Voronoi tesselations
+*! Voronoi tesselations (v1.11)
 *! by Asjad Naqvi (asjadnaqvi@gmail.com, @AsjadNaqvi)
 *!
+*! Ver 1.11 05.03.2022: x and y flipped. faster export to Stata using views
 *! Ver 1.10 01.03.2022: polygons exported as shapes. rays fixed. other bug fixes.
 *  Ver 1.02 27.12.2021: rescale integration
 *  Ver 1.01 20.12.2021: minor fixes
@@ -15,7 +16,7 @@
 **     Asjad Naqvi		**
 **                      ** 
 **    Last updated:     **
-**     01 Mar 2022      **
+**     05 Mar 2022      **
 **						** 
 **    First release:    **
 **     22 Nov 2021      **
@@ -39,7 +40,8 @@ program define voronoi, eclass sortpreserve
 	
 	// di "Voronoi: Initializing"
 	
-	mata: voronoi_core(triangles, points, points2, halfedges, hull, `offset')
+		
+	mata: voronoi_core(triangles, points, points2, halfedges, hull, `offset', vorlines, vorpolygons)
 	// di "Voronoi: Done with Mata routines"
 	
 	
@@ -47,13 +49,21 @@ program define voronoi, eclass sortpreserve
 	
 	if "`lines'" != "" {
 	
-		mat colnames vorline = "vline_x1" "vline_y1" "vline_x2" "vline_y2"
+		mata: st_local("newobs", strofreal(rows(vorlines)))
+	
+		if `newobs' > _N {
+			qui set obs `newobs'
+		}	
+	
 		cap drop vline_x1
 		cap drop vline_x2
 		cap drop vline_y1
-		cap drop vline_y2
+		cap drop vline_y2	
+	
+		*mat colnames vorline = "vline_x1" "vline_y1" "vline_x2" "vline_y2"
+		*svmat vorline, n(col)
 		
-		svmat vorline, n(col)
+		getmata (vline_x1 vline_y1 vline_x2 vline_y2) = vorlines, force double replace		
 		
 		lab var vline_x1 "Voronoi line: x1"
 		lab var vline_y1 "Voronoi line: y1"
@@ -81,8 +91,10 @@ end
 cap mata: mata drop voronoi_core()
 
 mata // voronoi_core
-function voronoi_core(triangles, points, points2, halfedges, hull, offs)
+function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, vorp)
 {
+	// real matrix vorl, vorp
+	
 	coords = initialize(points2)
 
 	triangles = select(triangles, (triangles[.,1] :< .)) // added 17.12.2021
@@ -258,7 +270,7 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs)
 	// export the voronoi lines
 	
 	st_matrix("vorline", cliplist)
-	
+	vorl = cliplist
 	
 	
 	////////////////////////////////
@@ -355,7 +367,7 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs)
 	// export the voronoi polygons
 	
 	mata: st_matrix("vorpolyall", vorpolyall)
-	
+	vorp = vorpolyall
 }
 
 end
@@ -805,12 +817,12 @@ end
 **************************
 
 cap program drop vorpoly
-program define vorpoly 
+program define vorpoly, sortpreserve 
 	version 15
 
 	syntax varlist(min = 2 max = 2 numeric)
 	
-	gettoken x y : varlist
+	gettoken y x : varlist
 	
 	
 	////////////////////////
@@ -837,7 +849,15 @@ program define vorpoly
 		preserve	
 			clear
 			
-			mat colnames vorpolyall = "vpoly_id" "vpoly_x" "vpoly_y" "hull" "angle"
+			mata: st_local("newobs", strofreal(rows(vorpolygons)))
+	
+			// expand observations (automate this for the custom data range)
+			if `newobs' > _N {
+				qui set obs `newobs'
+			}				
+			
+			
+			*mat colnames vorpolyall = "vpoly_id" "vpoly_x" "vpoly_y" "hull" "angle"
 			
 			// make sure the variables are clear
 			cap drop vpoly_id
@@ -847,8 +867,11 @@ program define vorpoly
 			cap drop angle
 			
 			
-			svmat vorpolyall, n(col)
-			mat drop vorpolyall
+			*svmat vorpolyall, n(col)
+			
+			getmata (vpoly_id vpoly_x vpoly_y hull angle) = vorpolygons, force double replace
+			
+			*mat drop vorpolyall
 			
 			gsort vpoly_id -angle
 			drop angle
