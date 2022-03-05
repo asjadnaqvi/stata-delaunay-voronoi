@@ -40,7 +40,7 @@ The summary of options is as follows:
 
 | Option | Description |
 | --- |--- |
-| rescale | If the `x` and `y` coordinates do not have similar value ranges, then rescale normalizes to the same interval calculates the triangles and rescales them back. |
+| rescale | If the `y` and `x` coordinates do not have similar value ranges, then rescale normalizes to the same interval calculates the triangles and rescales them back. |
 | triangles | exports back the Delaunay triangles as shapes. |
 | hull | exports back the hull as line coordinates. |
 | voronoi() | exports back the Voronoi as *lines* or *polygons* or both. |
