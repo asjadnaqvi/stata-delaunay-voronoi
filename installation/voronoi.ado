@@ -40,9 +40,13 @@ program define voronoi, eclass sortpreserve
 	
 	// di "Voronoi: Initializing"
 	
-		
+	mata: vorlines 	  = .
+	mata: vorpolygons = .
+	
 	mata: voronoi_core(triangles, points, points2, halfedges, hull, `offset', vorlines, vorpolygons)
 	// di "Voronoi: Done with Mata routines"
+	
+	
 	
 	
 	// push to Stata
@@ -101,7 +105,6 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	tri3 = colshape(triangles',3)'  // reshape triangles
 	
 	
-	
 	xmin = .
 	xmax = .
 	ymin = .
@@ -117,10 +120,7 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	for (i=1; i <= num2; i++) {
 		vorcenter[i,.]  = circumcenter2(points2,triangles,i)
 	}
-	
-	
-		
-	
+
 	// triangle pairs from which the center points are extracted (point0, point1)
 	voredges = J(rows(triangles),2,.)  // voronoi edge pairs indexed to vorcenter
 	forEachVoronoiEdge(triangles,halfedges,voredges)
@@ -225,10 +225,11 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	
 	// clip the rays
 	// gen x1, y1, x2, y2
-	cliplist = J(rows(point0),4,.)
+	vorl = J(rows(point0),4,.)
+		
 		for (i=1; i <= rows(point0); i++) {			
 			//i
-			cliplist[i,.] = clipline(point0[i,1], point0[i,2], point1[i,1], point1[i,2], xmin, xmax, ymin, ymax)	
+			vorl[i,.] = clipline(point0[i,1], point0[i,2], point1[i,1], point1[i,2], xmin, xmax, ymin, ymax)	
 
 		}
 
@@ -240,14 +241,14 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	// this is some error in the clipline. it is evaluating a wrong point on the line which should be dropped.
 	// manually drop them now. fix later
 	
-		for (i=1; i <= rows(cliplist); i++) {	
+		for (i=1; i <= rows(vorl); i++) {	
 			
-			if (cliplist[i,1]==cliplist[i,3] & cliplist[i,2]==cliplist[i,4]) {
+			if (vorl[i,1]==vorl[i,3] & vorl[i,2]==vorl[i,4]) {
 					
-				cliplist[i,1] = .
-				cliplist[i,2] = .
-				cliplist[i,3] = .
-				cliplist[i,4] = .
+				vorl[i,1] = .
+				vorl[i,2] = .
+				vorl[i,3] = .
+				vorl[i,4] = .
 			}			
 		}	
 
@@ -261,16 +262,15 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	
 	
 	// rescale back from [0,1] to the original domain
-	cliplist[.,1] = rescale2(cliplist[.,1], xmin, xmax, xminr, xmaxr)
-	cliplist[.,2] = rescale2(cliplist[.,2], ymin, ymax, yminr, ymaxr)
-	cliplist[.,3] = rescale2(cliplist[.,3], xmin, xmax, xminr, xmaxr)
-	cliplist[.,4] = rescale2(cliplist[.,4], ymin, ymax, yminr, ymaxr)			
+	vorl[.,1] = rescale2(vorl[.,1], xmin, xmax, xminr, xmaxr)
+	vorl[.,2] = rescale2(vorl[.,2], ymin, ymax, yminr, ymaxr)
+	vorl[.,3] = rescale2(vorl[.,3], xmin, xmax, xminr, xmaxr)
+	vorl[.,4] = rescale2(vorl[.,4], ymin, ymax, yminr, ymaxr)			
 		
 	
 	// export the voronoi lines
 	
-	st_matrix("vorline", cliplist)
-	vorl = cliplist
+	st_matrix("vorlines", vorl)
 	
 	
 	////////////////////////////////
@@ -279,8 +279,8 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	
 
 	// interior points
-	point0c = cliplist[1::rows(voredges),1..2]
-	point1c = cliplist[1::rows(voredges),3..4]
+	point0c = vorl[1::rows(voredges),1..2]
+	point1c = vorl[1::rows(voredges),3..4]
 
 	
 	vorpoly = J(rows(voredges) * 4, 4, .)
@@ -358,16 +358,14 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	vorpoly2 = vorpoly2, J(rows(vorpoly2),1,1)
 	
 
-	vorpolyall = vorpoly \ vorpoly2
-	vorpolyall = uniqrows(vorpolyall)
-	vorpolyall = vorpolyall, J(rows(vorpolyall),1,.)
-	vorpolyall = select(vorpolyall, (vorpolyall[.,2] :< .)) // drop the missing rows	
+	vorp = vorpoly \ vorpoly2
+	vorp = uniqrows(vorp)
+	vorp = vorp, J(rows(vorp),1,.)
+	vorp = select(vorp, (vorp[.,2] :< .)) // drop the missing rows	
 	
 	
 	// export the voronoi polygons
-	
-	mata: st_matrix("vorpolyall", vorpolyall)
-	vorp = vorpolyall
+	// st_matrix("vorpolygons", vorp)  // moved to export polygons program
 }
 
 end
@@ -963,16 +961,16 @@ program define vorpoly, sortpreserve
 			drop order
 			order vpoly_id vpoly_x vpoly_y	
 			
-			mkmat vpoly*, mat(vpoly)
-			mat colnames vpoly = "vpoly_id" "vpoly_x" "vpoly_y" 
+			mkmat vpoly*, mat(vpolygons)
+			mat colnames vpolygons = "vpoly_id" "vpoly_x" "vpoly_y" 
 		
 		restore
 	}
 	
 
 	qui {
-		cap drop vpoly* // make sure the variables are clear
-		svmat vpoly, n(col)
+		cap drop vpolygons* // make sure the variables are clear
+		svmat vpolygons, n(col)
 		
 		lab var vpoly_id "Voronoi poly: _id"
 		lab var vpoly_x  "Voronoi poly: x"

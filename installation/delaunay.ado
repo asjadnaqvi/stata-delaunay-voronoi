@@ -35,17 +35,12 @@ prog def delaunay, eclass sortpreserve
 		[ REScale TRIangles Hull VORonoi(namelist min=1 max=2) ] [OFFset(real 0.05)] 
 	
 
-	
-	
 	// check gtools
 	capture findfile gtools.ado
 	if _rc != 0 {
 		display as error "gtools package is missing. Click here to install: {stata ssc install gtools, replace}"
 		exit
 	}
-	
-	
-	
 	
 	
 	di _newline
@@ -1016,7 +1011,7 @@ program define add_triangles, sortpreserve
 	}
 			
 	
-	*mata: st_matrix("triangles", mytriangles)
+	mata: st_matrix("triangles", mytriangles)
 	*mat colnames triangles = "tri_num" "tri_id" "tri_x" "tri_y"
 	*qui svmat triangles, n(col)
 		lab var tri_num "Triangle: number"
