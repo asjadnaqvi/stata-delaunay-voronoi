@@ -1,4 +1,4 @@
-![StataMin](https://img.shields.io/badge/stata-2015-blue)
+![StataMin](https://img.shields.io/badge/stata-2015-blue) ![issues](https://img.shields.io/github/issues/asjadnaqvi/stata-delaunay-voronoi) ![license](https://img.shields.io/github/license/asjadnaqvi/stata-delaunay-voronoi) ![Stars](https://img.shields.io/github/stars/asjadnaqvi/stata-delaunay-voronoi) ![version](https://img.shields.io/github/v/release/asjadnaqvi/stata-delaunay-voronoi) ![release](https://img.shields.io/github/release-date/asjadnaqvi/stata-delaunay-voronoi)
 
 
 # Stata delaunay voronoi
