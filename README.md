@@ -195,7 +195,7 @@ Generate a sample of points:
 
 ```applescript
 cap drop sample
-gen sample = runiform() > 0.80	// Lower values = large sample = more processing time. Use with caution. 
+gen sample = runiform() > 0.80	// Lower values = large sample = more processing time. Use carefully. 
 keep if sample==1
 count							// see how many values you are processing
 ```
@@ -244,20 +244,19 @@ library(imager)
 library(dplyr)
 library(scales)
 
-
 # Convert to grayscale
 load.image("dali.jpg") %>% grayscale() -> x
 
-# Filter image. A higher threshold of "black" = more data points
+# Filter image. A higher threshold of "black" = more data points (use carefully)
 x %>%
   threshold("30%") %>% 
   as.cimg() %>% 
   as.data.frame() -> df
 
-
 write.csv(df,"dali.csv", row.names = TRUE)
 ```
 
+Share your images if you use this script!
 
 ## Versions
 
