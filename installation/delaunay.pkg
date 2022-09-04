@@ -1,11 +1,5 @@
-v 1.1
-d {bf:DELAUNAY}: Delaunay triangulation, Voronoi tessellation, and Convex Hull
-d
-d v1.01: [if] [in] statements added
-d v1.00: first release
-d
-d Requires: Stata version 15 or higher.
-d Requires: gtools (ssc install gtools, replace)
+v 1.2
+d {bf:DELAUNAY}: A Stata package for Delaunay triangles, Voronoi tessellation, and Convex Hull
 d
 d KW: Stata
 d KW: graphs
@@ -13,10 +7,10 @@ d KW: Delaunay
 d KW: Voronoi
 d KW: Convex hull
 d
-d Distribution date: 01 March 2022
+d Distribution-Date: 20220904
 d License: MIT
 d
-d Author: Asjad Naqvi (WU Wien/IIASA, Austria)
+d Author: Asjad Naqvi
 d E-mail: asjadnaqvi@gmail.com
 d
 f delaunay.ado

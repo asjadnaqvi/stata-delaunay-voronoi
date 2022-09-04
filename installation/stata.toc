@@ -1,12 +1,10 @@
-v 1.10
-d DELAUNAY: Delaunay triangulation, Voronoi tessellation, Convex hull
+v 1.2
+d DELAUNAY: A Stata package for Delaunay triangles, Voronoi tessellation, and Convex hull
 d  
-d This  version: 01 Mar 2022
+d This  version: 04 Sep 2022
 d First version: 22 Nov 2021
 d
 d Asjad Naqvi, 
-d WU Vienna/IIASA, Austria
-d
 d asjadnaqvi@gmail.com
 d https://medium.com/the-stata-guide
 d https://github.com/asjadnaqvi/Stata-schemes

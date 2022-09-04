@@ -1,4 +1,4 @@
-*! Voronoi tesselations (v1.11)
+*! Voronoi tesselations v1.2 04.09.2022: Export voronoi as files. Reshaping removed to optimize speed.
 *! by Asjad Naqvi (asjadnaqvi@gmail.com, @AsjadNaqvi)
 *!
 *! Ver 1.11 05.03.2022: x and y flipped. faster export to Stata using views
@@ -16,7 +16,7 @@
 **     Asjad Naqvi		**
 **                      ** 
 **    Last updated:     **
-**     05 Mar 2022      **
+**     04 Sep 2022      **
 **						** 
 **    First release:    **
 **     22 Nov 2021      **
@@ -37,42 +37,32 @@ program define voronoi, eclass sortpreserve
 		[ OFFset(real 0.05) ]		// bounding box of the voronoi. default set at +5% * (max - min)
 	
 	
-	
-	// di "Voronoi: Initializing"
-	
 	mata: vorlines 	  = .
 	mata: vorpolygons = .
 	
 	mata: voronoi_core(triangles, points, points2, halfedges, hull, `offset', vorlines, vorpolygons)
-	// di "Voronoi: Done with Mata routines"
-	
-	
-	
-	
-	// push to Stata
 	
 	if "`lines'" != "" {
-	
-		mata: st_local("newobs", strofreal(rows(vorlines)))
-	
-		if `newobs' > _N {
-			qui set obs `newobs'
-		}	
-	
-		cap drop vline_x1
-		cap drop vline_x2
-		cap drop vline_y1
-		cap drop vline_y2	
-	
-		*mat colnames vorline = "vline_x1" "vline_y1" "vline_x2" "vline_y2"
-		*svmat vorline, n(col)
+			
+		qui {
+		preserve		
+			clear
+			getmata (vline_x1 vline_y1 vline_x2 vline_y2) = vorlines, force double replace		
+			
+			gen serial = _n
+			
+			lab var serial "Serial"
+			lab var vline_x1 "Voronoi line: x1"
+			lab var vline_y1 "Voronoi line: y1"
+			lab var vline_x2 "Voronoi line: x2"
+			lab var vline_y2 "Voronoi line: y2"	
+			
+			compress
+			save _vorlines.dta, replace	
+			
+		restore
+		}
 		
-		getmata (vline_x1 vline_y1 vline_x2 vline_y2) = vorlines, force double replace		
-		
-		lab var vline_x1 "Voronoi line: x1"
-		lab var vline_y1 "Voronoi line: y1"
-		lab var vline_x2 "Voronoi line: x2"
-		lab var vline_y2 "Voronoi line: y2"	
 	}
 	
 	
@@ -143,8 +133,6 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 				}
 			}
 
-		
-	// printf("Check4\n")	
 			
 	point0 = select(point0, (point0[.,1] :< .)) // drop the missing rows
 	point1 = select(point1, (point1[.,1] :< .)) 		
@@ -164,10 +152,6 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	y1 = coords[2 * hlen, 1]
 	
 	vectors = J(rows(triangles) * 2, 1, 0)
-
-	
-	// printf("Check5\n")	
-	
 	
 		for (i=1; i<=rows(hull); i++) {			
 			
@@ -189,8 +173,6 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 			vectors[p1 + 1, 1] = x1 - x0			
 		}	
 		
-	// printf("Check6\n")	
-
 	// add the boundary edges
 	pointh0 = J(rows(hull),2,.)
 	pointh1 = J(rows(hull),2,.)
@@ -198,7 +180,6 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	h0 = hull[rows(hull),1]
 	h1 = hull[rows(hull),1]
 
-		
 		for (i=1; i <= rows(hull); i++) {
 			
 			h0 = h1
@@ -268,9 +249,9 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	vorl[.,4] = rescale2(vorl[.,4], ymin, ymax, yminr, ymaxr)			
 		
 	
-	// export the voronoi lines
+	// save the voronoi lines as a Stata matrix
 	
-	st_matrix("vorlines", vorl)
+	// st_matrix("vorlines", vorl)
 	
 	
 	////////////////////////////////
@@ -305,16 +286,13 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	}
 	
 
-	
 	vorpoly = uniqrows(vorpoly)
 	vorpoly= sort(vorpoly, (1,2))
 	
 	// mark the hull points
 	for (i = 1; i <= rows(vorpoly); i++ ) { 
 		for (j = 1; j <= rows(hull); j++ ) { 
-		
-		if (vorpoly[i,1]==hull[j,1]) vorpoly[i,4]=1
-		
+			if (vorpoly[i,1]==hull[j,1]) vorpoly[i,4]=1
 		}
 	}
 	
@@ -441,14 +419,14 @@ cap mata: mata drop pointsOfTriangle()
 mata:  // pointsOfTriangle
 function pointsOfTriangle(triangles,t)
 	{
-		return(triangles[edgesOfTriangle(t)[1,1],1],triangles[edgesOfTriangle(t)[1,2],1],triangles[edgesOfTriangle(t)[1,3],1] )
+		return (triangles[edgesOfTriangle(t)[1,1],1],triangles[edgesOfTriangle(t)[1,2],1],triangles[edgesOfTriangle(t)[1,3],1] )
 	}
 end
 
-// another circumcenter. it just returns a different structure
+
 
 ************************
-// 	  circumcenter2	  //	
+// 	  circumcenter2	  //	 // another circumcenter. it just returns a different structure
 ************************    
 
 cap mata: mata drop circumcenter2()
@@ -476,25 +454,23 @@ function circumcenter2(points,triangles,i)
 	ab = (dx * ey - dy * ex) * 2
 	
 	
-	if (abs(ab) < 1e-9 ) {
+	// if (abs(ab) < 1e-9 ) {
 		// degenerate case 
+	//	a = 1e9
+	//	r = triangles[1] * 2
+	//	a = a * sign((points[r - 1,1] - x1) * ey - (points[r,1] - y1) * ex)
+	//	myx = (x1 + x3) / 2 - a * ey
+	//	myy = (y1 + y3) / 2 + a * ex
+	// }
+	// else {	
+	    d = 1 / ab
+        bl = dx * dx + dy * dy
+        cl = ex * ex + ey * ey
+        myx = x1 + (ey * bl - dy * cl) * d
+        myy = y1 + (dx * cl - ex * bl) * d
+	// }
 	
-		a = 1e9
-		r = triangles[1] * 2
-		a = a * sign((points[r - 1,1] - x1) * ey - (points[r,1] - y1) * ex);
-		myx = (x1 + x3) / 2 - a * ey;
-		myy = (y1 + y3) / 2 + a * ex;
-		
-	}
-	else {	
-	    d = 1 / ab;
-        bl = dx * dx + dy * dy;
-        cl = ex * ex + ey * ey;
-        myx = x1 + (ey * bl - dy * cl) * d;
-        myy = y1 + (dx * cl - ex * bl) * d;	
-	}
-	
-	return(myx,myy)
+	return (myx, myy)
 }
 end
 
@@ -579,7 +555,7 @@ function project(x0, y0, vx, vy, xmin, xmax, ymin, ymax)
 		}
     }
 	
-	return(myx, myy)
+	return (myx, myy)
 	
 }
 end
@@ -830,10 +806,10 @@ program define vorpoly, sortpreserve
 	qui {
 		preserve
 			tempfile _raw
-			keep _id `varlist'
-			qui drop if _id==.
-			qui drop if `x'==.   // this ensures that _id remains unique. especially if shapes are drawn sequentially.
-			ren _id vpoly_id
+			keep _ID `varlist'
+			drop if _ID==.
+			drop if `x'==.   
+			ren _ID vpoly_id
 			save `_raw', replace
 		restore
 	}
@@ -846,35 +822,11 @@ program define vorpoly, sortpreserve
 	qui {
 		preserve	
 			clear
-			
-			mata: st_local("newobs", strofreal(rows(vorpolygons)))
-	
-			// expand observations (automate this for the custom data range)
-			if `newobs' > _N {
-				qui set obs `newobs'
-			}				
-			
-			
-			*mat colnames vorpolyall = "vpoly_id" "vpoly_x" "vpoly_y" "hull" "angle"
-			
-			// make sure the variables are clear
-			cap drop vpoly_id
-			cap drop vpoly_x 
-			cap drop vpoly_y 
-			cap drop hull
-			cap drop angle
-			
-			
-			*svmat vorpolyall, n(col)
-			
+		
 			getmata (vpoly_id vpoly_x vpoly_y hull angle) = vorpolygons, force double replace
-			
-			*mat drop vorpolyall
-			
-			gsort vpoly_id -angle
-			drop angle
 
-			by vpoly_id: gen order = _n
+			drop angle
+			bysort vpoly_id: gen order = _n
 			
 			// add the corner here
 			cap drop dist*
@@ -918,64 +870,39 @@ program define vorpoly, sortpreserve
 			replace vpoly_x = xmin if corner==4 & markme==1
 			replace vpoly_y = ymax if corner==4 & markme==1
 
-
-
-			qui summ order
-			replace order = `r(max)' + 1 if markme==1
-
-
-			cap drop edge* dist*
-			cap drop corner markme
-			cap drop hull
+			summ order, meanonly
+			replace order = r(max) + 1 if markme==1
 
 			sort vpoly_id order
-			drop order
+			drop order edge* dist* corner markme hull
 
 			merge m:1 vpoly_id using `_raw'
 
-			gen angle = atan2(vpoly_y - `y', vpoly_x - `x')
-
+			gen angle = atan2(vpoly_y - `y', vpoly_x - `x')  // fix the order of drawing the points
 			gsort vpoly_id -angle
 
 			by vpoly_id: gen order = _n		
 			
-			// drop raw
-			drop `varlist' 
-			drop angle
+			egen tag = tag(vpoly_id)
+			expand 2 if tag==1, gen(temp)
+			replace order=0 if temp==1
+			replace vpoly_x = . if temp==1
+			replace vpoly_y = . if temp==1
 			
-			// add the corners
-
-			greshape wide vpoly_x vpoly_y, i(order) j(vpoly_id)
-
-			set obs `=_N + 1'
-			replace order = 0 in `=_N'
-
-
-
-			greshape long vpoly_x vpoly_y, i(order) j(vpoly_id)
+			drop tag temp `varlist' _m angle
 
 			sort vpoly_id order
-			drop if vpoly_x == . & order!=0
+			ren order shape_order
+			ren vpoly_id _ID
+			ren vpoly_x _X
+			ren vpoly_y _Y
 
-			*twoway (area vpoly_y vpoly_x, cmissing(n) nodropbase fc(gs14%10) lw(0.04) lc(orange))
-			drop order
-			order vpoly_id vpoly_x vpoly_y	
+			*mkmat _ID _X _Y shape_order, mat(vorpoly)
+			compress
+			save _vorpoly.dta, replace	
 			
-			mkmat vpoly*, mat(vpolygons)
-			mat colnames vpolygons = "vpoly_id" "vpoly_x" "vpoly_y" 
-		
 		restore
 	}
 	
-
-	qui {
-		cap drop vpolygons* // make sure the variables are clear
-		svmat vpolygons, n(col)
-		
-		lab var vpoly_id "Voronoi poly: _id"
-		lab var vpoly_x  "Voronoi poly: x"
-		lab var vpoly_y  "Voronoi poly: y"
-	}
-
 end
 

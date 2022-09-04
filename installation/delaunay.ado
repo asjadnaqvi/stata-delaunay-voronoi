@@ -1,8 +1,8 @@
-*! Delaunay triangulation and convex hull (v1.11)
-*! by Asjad Naqvi (asjadnaqvi@gmail.com, @AsjadNaqvi)
-*!
-*! Ver 1.11 05.03.2022: x and y flipped. faster export to Stata. warnings added.
-*! Ver 1.10 01.03.2022: missing triangles fixed. rays fixed. 
+*! delaunay v1.2: A Stata package for Delaunay triangulation, Convex hull, and Voronoi tesselations
+*! Asjad Naqvi (asjadnaqvi@gmail.com, @AsjadNaqvi)
+* 
+*  Ver 1.11 05.03.2022: x and y flipped. faster export to Stata. warnings added.
+*  Ver 1.10 01.03.2022: missing triangles fixed. rays fixed. 
 *  Ver 1.02 27.12.2021: rescale added. if made optional
 *  Ver 1.01 20.12.2021: if/in & notes by wbuchanan
 *  Ver 1.00 22.11.2021: first release
@@ -16,7 +16,7 @@
 **     Asjad Naqvi      **
 **                      ** 
 **    Last updated:     **
-**     05 Mar 2022      **
+**     04 Sep 2022      **
 **			            ** 
 **    First release:    **
 **     22 Nov 2021      **
@@ -27,103 +27,167 @@
 
 cap prog drop delaunay
 
-prog def delaunay, eclass sortpreserve
+prog def delaunay, sortpreserve
 
 	version 15
 	
 	syntax varlist(min = 2 max = 2 numeric) [if] [in],	 ///   
-		[ REScale TRIangles Hull VORonoi(namelist min=1 max=2) ] [OFFset(real 0.05)] 
+		[ REScale 						] 				 ///	// normalize x and y to [0,1] calculate stuff and rescale back
+		[ TRIangles	addbox		 		]				 ///    // export triangles with or without a bounding box
+		[ hull  replace					]				 ///	// export the hull				
+		[ VORonoi(namelist min=1 max=2)	] 				 ///	// export the Voronoi polygons
+		[ OFFset(real 0.05) 			] 		
 	
 
-	// check gtools
-	capture findfile gtools.ado
-	if _rc != 0 {
-		display as error "gtools package is missing. Click here to install: {stata ssc install gtools, replace}"
-		exit
-	}
-	
-	
-	di _newline
-	di in yellow "Delaunay: Initializing >"
+	************************
+	***** Error checks *****
+	************************
 	
 	marksample touse, strok
 	
 	gettoken y x : varlist
 	
-	local obs1 = _N
+	local obs1 = _N	
 	
 	
+	// check gtools (no longer needed v 1.2)
+	/*
+	capture findfile gtools.ado
+	if _rc != 0 {
+		display as error "gtools package is missing. Click here to install: {stata ssc install gtools, replace}"
+		exit
+	}
+	*/
 	
+	// check voronoi locals
+	local vorcount = wordcount("`voronoi'")
+	
+	if (`vorcount' == 1)  {
+		if ("`voronoi'" != "lines" & "`voronoi'" != "polygons") {
+			di as err "Valid options for voronoi() are {ul:lines} or {ul:polygons} or both."
+			exit
+		}
+	}	
+	if (`vorcount' == 2)  {	
+		tokenize `voronoi'
+		
+		if ("`1'" != "lines" & "`1'" != "polygons") & ("`2'" != "lines" & "`2'" != "polygons") & ("`1'" != "`2'") {
+			di as err "Valid options for voronoi() are {ul:lines} or {ul:polygons} or both."
+			exit			
+		}
+	}
+
+
+	if "`replace'" == "" {
+		if "`triangles'" != "" {
+			cap confirm file _triangles.dta
+			if _rc == 0 {
+				di as error "File {it:_triangles.dta} already exists. Please use the {ul:replace} option if you want to overwrite it."
+				exit
+			}
+		}
+		
+		if "`voronoi'" != "" {
+				cap confirm file _vorlines.dta
+				if _rc == 0 {
+					di as error "File {it:_vorlines.dta} already exists. Please use the {ul:replace} option if you want to overwrite it."
+					exit
+				}
+				cap confirm file _vorpoly.dta
+				if _rc == 0 {
+					di as error "File {it:_vorpoly.dta} already exists. Please use the {ul:replace} option if you want to overwrite it."
+					exit
+				}		
+		}
+
+		cap confirm variable _ID
+			if _rc == 0 {
+				di as error "Variable {it:_ID} already exists. Please use the {ul:replace} option if you want to overwrite it."
+				exit
+			}			
+		
+		
+	}
 	
 	// advice rescale
 	if "`rescale'" == ""  {
 	
 		qui su `y' if `touse', meanonly
-		local ymean = `r(mean)'
+		local ymean = r(mean)
 		
 		qui su `x' if `touse', meanonly
-		local xmean = `r(mean)'
+		local xmean = r(mean)
 		
 		if (`ymean' > 2 * `xmean') | (`xmean' > 2 * `ymean') {
-			di in green "Warning: X and Y are likely not on the same scale. If X and Y are not geographic coordinates," 
-			di in green "then the use of the {ul:rescale} option is highly advised. See documentation."
+			di in yellow "Warning: X and Y are likely not on the same scale. If X and Y are not geographic coordinates," 
+			di in yellow "then the use of the {ul:rescale} option is highly recommended. See help file."
 			di _newline
 		}
 	}
 	
+	**************************
+	**** End error checks ****
+	**************************
 	
-	// generate an internal _id variable	
-		cap confirm variable _id
+	di _newline
+	di in yellow "Initializing >"	
+	
+	
+	// generate the _id variable
+		cap confirm variable _ID
 		
 		if !_rc {
-			drop if _id==.
-			drop _id
+			drop if _ID==.
+			drop _ID
 		}
 
-		gen _id = _n
-		lab var _id "observation id"
+		gen _ID = _n if `touse'
+		lab var _ID "Observation ID"
 	
 
-	mata: points   = select(st_data(., ("`x'", "`y'")), st_data(., "`touse'"))
+		mata: points  = select(st_data(., ("`x'", "`y'")), st_data(., "`touse'"))
+	
+	
+	if "`addbox'" != "" {
+		mata: trixmin = .; trixmax = .; triymin = .; triymax = .
+		mata: addbounds(points, trixmin, trixmax, triymin, triymax, `offset')
+		
+		// now we create another copy with bounds	
+		mata: points = points \ trixmin, triymin \ trixmin, triymax \ trixmax, triymax \ trixmax, triymin
+	
+	}
 	
 	if "`rescale'" != "" {	
-		mata: points2 = points  // create a copy
+		// create a copy for the voronoi
+		mata: points2 	   = points  
 		mata: points2[.,1] = rescale(points[.,1], 0, 1)
 		mata: points2[.,2] = rescale(points[.,2], 0, 1)
+		
 	}
 	else {
 		mata: points2 = points
 	}
 	
-	mata: eps          = 1e-20
-	mata: edgestack    = J(512, 1, .) 
-	mata: coords       = initialize(points2)
-	mata: num          = rows(points2)   // updated
+	mata: eps          = 1e-20; edgestack = J(512, 1, .) 
+	mata: coords       = initialize(points2); num = rows(points2)
 	mata: maxTriangles = max(((2 * num) - 5, 0)) 
 	
 	// core arrays
-	mata: triangles = J(maxTriangles * 3, 1, .)   
-	mata: halfedges = J(maxTriangles * 3, 1, .)
-	mata: hull      = J(num, 1, .)  
+	mata: triangles    = J(maxTriangles * 3, 1, .)   
+	mata: halfedges    = J(maxTriangles * 3, 1, .)
+	mata: hull         = J(num, 1, .)  
 		
 	// arrays for tracking 
-	mata: hashSize  = ceil(sqrt(num))
-	mata: hullPrev  = J(num, 1, .)  
-	mata: hullNext  = J(num, 1, .)  
-	mata: hullTri   = J(num, 1, .)  
-	mata: hullHash  = J(hashSize, 1, -1) 
-	mata: ids   	= J(num, 1, .)
-	mata: dists     = J(num, 1, .)	
+	mata: hashSize     = ceil(sqrt(num))
+	mata: hullPrev     = J(num, 1, .); hullNext = J(num, 1, .); hullTri = J(num, 1, .); hullHash  = J(hashSize, 1, -1) 
+	mata: ids   	   = J(num, 1, .); dists     = J(num, 1, .)
 	
 	// temporary arrays for sorting points
-	mata: ids   = J(num, 1, .)
-	mata: dists = J(num, 1, .)
-	
+	mata: ids   = J(num, 1, .);  dists = J(num, 1, .)
 	
 	di in yellow "Starting core routines >"
 
 	// run the core routine 
-
 	mata: _delaunay_core(coords, ids, dists, triangles, halfedges, hull, hullNext,  ///   
 				  hullPrev, hullTri, hullHash, hashSize, eps, edgestack)
 
@@ -131,34 +195,23 @@ prog def delaunay, eclass sortpreserve
 	***  export geometry   ***
 	**************************
 
-	di in yellow "Exporting geometry >"
-	
 	
 	// delaunay triangles
-	if "`triangles'" != ""  add_triangles
+	if "`triangles'" != ""  {
+		di in yellow "Exporting geometry > Triangles exported as {it:_triangles.dta}."
+		add_triangles
+	}
 	
 	// convex hull
-	if "`hull'" 	 != ""  add_hull
-	
-	// voronoi lines and/or polygons
-	
-	// if "`voronoi'" 	 == "" di as err `" You need to specify {ul:lines} or {ul:polygon} or both as options."'
-	
-	local vor_valid = `" "lines", "polygons" "'
-	capt assert inlist( "`voronoi'", `vor_valid')
-
-	/*
-		di "`_rc'"
-		
-		if _rc {
-		
-		di as err `" Valid options for voronoi() are: `vor_valid' or both. "'
-		exit
+	if "`hull'" 	 != ""  {
+		di in yellow "Exporting geometry > Hull added as variables."
+		add_hull
 		}
-	*/
 	
-	
+	// voronoi lines and polygons
 	if "`voronoi'" 	!= ""  {
+		di in yellow "Exporting geometry > Voronoi exported as {it:_vorlines.dta}/{it:_vorpoly.dta}."
+		
 		if "`offset'" != "" {
 			voronoi `varlist', `voronoi' offset(`offset')
 		}
@@ -167,10 +220,12 @@ prog def delaunay, eclass sortpreserve
 		}
 	}
 	
-	local obs2 = _N
+	// clear mata
+	mata: mata drop coords dists edgestack eps halfedges hashSize hull hullHash hullNext hullPrev hullTri ids maxTriangles  num points points2 triangles  // core
+	cap mata: mata drop mytriangles triindex 	// triangles
+	cap mata: mata drop myhull 					// hull 
+	cap mata: mata drop vorlines vorpolygons 	// voronoi
 	
-	di in yellow "Done! Observations increased from `obs1' to `obs2'."
-		
 	
 end
 
@@ -193,7 +248,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	minY =  1e16
 	maxX = -1e16   // arbitrary large numbers representing infinity
 	maxY = -1e16
-
+	
 	for (i=1; i<= num; i++) {	
 		
 		x = coords[2 * i - 1, 1] 
@@ -214,9 +269,8 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	i0 = 0
 	i1 = 0
 	i2 = 0
-	
-	// pick a seed point close to the center (first observation)
 
+	// pick a seed point close to the center (first observation)
 	for (i=1; i<=num; i++) {	
 		dval = dist(cx, cy, coords[2 * i - 1], coords[2 * i])
 	
@@ -228,6 +282,8 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 
 	i0x = coords[2 * i0 - 1, 1]
 	i0y = coords[2 * i0    , 1]
+
+	
 	minDist = .
 
 
@@ -242,13 +298,13 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 			minDist = dval
 		}
 	}
-	    
+	 
+	
 	i1x = coords[2 * i1 - 1, 1]
 	i1y = coords[2 * i1    , 1]
 	minRadius = .
 
 	// find the third point which forms the smallest circumcircle with the first two (third observation)
-	
 	for (i=1; i<=num; i++) {
 		if (i == i0 | i == i1) continue
 		
@@ -262,8 +318,8 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 		
 	i2x = coords[2 * i2 - 1, 1]
 	i2y = coords[2 * i2    , 1]		
-
-	if (minRadius == .) {  // a very large number
+	
+	if (minRadius == .) { 
 		
 		// calculate the distances ot the points with the first point	
 		for (i=1; i<=num; i++) {
@@ -287,7 +343,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 			}
 		}
 	
-		// initiatte the hull, triangle, and halfedges matrices 
+		// initiate the hull, triangle, and halfedges matrices 
 		hull = hull[1..j,1]  
 		triangles =  .  	
 		halfedges =  .	
@@ -295,7 +351,6 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 
 
 	// swap the order of the seed points for counter-clockwise orientation
-
 	if (orient(i0x, i0y, i1x, i1y, i2x, i2y)) {
 		i = i1
 		x = i1x
@@ -321,9 +376,8 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	}
 	
 	// sort the points by distance from the seed triangle circumcenter
-	_quicksort(ids, dists, 1, num-1)  // num changed to num - 1
+	_quicksort(ids, dists, 1, num - 1)  // num changed to num - 1
 
-	
 	// set up the seed triangle as the starting hull
 	hullStart = i0
 	hullSize  = 3		
@@ -343,13 +397,15 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	hullTri[i1] = 2
 	hullTri[i2] = 3
 
-		
+	
 	// manual index fix to match the py output
+	
 	hullHash[hashKey(i0x,i0y,cx,cy,hashSize) + 1] = i0   
 	hullHash[hashKey(i1x,i1y,cx,cy,hashSize) + 1] = i1
 	hullHash[hashKey(i2x,i2y,cx,cy,hashSize) + 1] = i2
 		
 	trianglesLen = 1
+	
 	
 
 	// dump is just a dummy to prevent the function from returning a value on the screen
@@ -396,8 +452,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 		emp = start                		
 		
 		www = 0 // while		
-		
-		
+	
 		while (www == 0) {  // here is where points are being dropped
 			q = hullNext[emp,1]
 			if (orient(x, y, coords[2 * emp - 1], coords[2 * emp], coords[2 * q - 1], coords[2 * q])) break		
@@ -510,7 +565,7 @@ real vector initialize(real matrix data)
 			coords[2 * i    , 1] = data[i,2]
 		}
 		
-	return(coords)
+	return (coords)
 }
 end
 
@@ -524,7 +579,16 @@ cap mata: mata drop hashKey()
 mata // _hashKey
 real scalar hashKey(x,y,cx,cy,hashSize)
 {
-	return(mod(floor(pseudoAngle(x - cx, y - cy) * hashSize),hashSize))
+	real scalar tt 
+	tt = mod(floor(pseudoAngle(x - cx, y - cy) * hashSize), hashSize) // new code to fix return . (4 Sep 2022)
+	
+	if (tt != .) {
+		return (tt)
+	}
+	else {
+		return (0)
+	}
+	
 }
 end
 
@@ -539,15 +603,14 @@ cap mata: mata drop pseudoAngle()
 mata: // pseudoAngle
 function pseudoAngle(real scalar dx, real scalar dy)
 {
-
 	real scalar p
 	p = dx / (abs(dx) + abs(dy))
 
 	if (dy > 0) {
-        return((3 - p) / 4)
+        return ((3 - p) / 4)
 	}
     else {
-        return((1 + p) / 4)
+        return ((1 + p) / 4)
 	}
 }
 end
@@ -655,7 +718,7 @@ function legalize(real scalar a, real vector coords, halfedges, edgestack, trian
 			a = edgestack[i,1]
 		}
 	}
-	return(ar) 
+	return (ar) 
 }
 end
 
@@ -699,7 +762,7 @@ function addTriangle(triangles, trianglesLen, halfedges, i0, i1, i2, a, b, c)
         _link(halfedges, t + 2, c)
 
         trianglesLen = trianglesLen + 3
-        return(t)
+        return (t)
 }
 end
 
@@ -717,7 +780,7 @@ real vector dist(ax, ay, bx, by)
 	dx = ax - bx
 	dy = ay - by
 
-	return(dx*dx + dy*dy)
+	return (dx*dx + dy*dy)
 }
 end
 
@@ -742,7 +805,7 @@ function orientIfSure(px, py, rx, ry, qx, qy)
         return(left - right)
 	}
     else {
-        return(0)
+        return (0)
 	}
 }
 end
@@ -760,7 +823,7 @@ function orient(px, py, rx, ry, qx, qy)
 	real scalar x
 	x = (orientIfSure(px, py, rx, ry, qx, qy) < 0  | orientIfSure(rx, ry, qx, qy, px, py) < 0  |  orientIfSure(qx, qy, px, py, rx, ry)  < 0 )
 	
-	return(x)  // a true false statement
+	return (x)  // a true false statement
 }
 end
 
@@ -790,7 +853,7 @@ function inCircle(ax, ay, bx, by, cx, cy, px, py)
 
 	x = (dx * (ey * cp - bp * fy)) - (dy * (ex * cp - bp * fx)) + (ap * (ex * fy - ey * fx))
 
-	return(x < 0) 
+	return (x < 0) 
 
 }
 end
@@ -819,7 +882,7 @@ function circumradius(ax, ay, bx, by, cx, cy)
     x = ((ey * bl) - (dy * cl)) * d
     y = ((dx * cl) - (ex * bl)) * d
 
-    return(x*x + y*y)
+    return (x*x + y*y)
 }
 end
 
@@ -910,7 +973,7 @@ mata: // rescale
 real vector rescale(points, a, b)
 {
 	newpoints = (b - a) * (points :- colmin(points)) :/ (colmax(points) - colmin(points)) :+ a
-	return(newpoints)
+	return (newpoints)
 }
 end
 
@@ -942,14 +1005,34 @@ real vector myindex
 myindex = J(rows(triangles4),1,.)
 
 	for (i = 1; i <= rows(triangles4); i++ ) { 
-		//myindex[i,1] = i
 		myindex[i,1] = floor((i - 1) / 4) + 1 
 	}
 
-return(myindex)
+	return (myindex)
 }
 end
 
+********************
+// 	  addbounds	  //		
+********************
+
+cap mata: mata drop addbounds()
+
+mata // addbounds
+function addbounds(points, xmin, xmax, ymin, ymax, offs)
+{
+
+	displacex = abs((max(points[.,1]) - min(points[.,1])) * offs)
+	displacey = abs((max(points[.,2]) - min(points[.,2])) * offs)
+
+	xmin 	  = min(points[.,1]) - displacex
+	xmax 	  = max(points[.,1]) + displacex
+
+	ymin 	  = min(points[.,2]) - displacey
+	ymax 	  = max(points[.,2]) + displacey
+	
+}
+end
 
 
 
@@ -973,7 +1056,7 @@ function fixtriangles(inputtri,points)
 		}
 	
 		
-	return(exporttri)	
+	return (exporttri)	
 }
 end
 
@@ -992,34 +1075,31 @@ program define add_triangles, sortpreserve
 	mata: triangles5 = triindex,triangles4	
 	mata: mytriangles = fixtriangles(triangles5,points)
 	
-	mata: st_local("newobs", strofreal(rows(mytriangles)))
 	
-	// expand observations (automate this for the custom data range)
-	if `newobs' > _N {
-		qui set obs `newobs'
-	}	
+	qui {
+	preserve
+		clear
+		getmata (_group _ID _X _Y) = mytriangles, force double replace
+		
+			gen serial = _n
+			order serial
+		
+			lab var serial	"Triangle: Serial"
+			lab var _group 	"Triangle: group"
+			lab var _ID  	"Triangle: Observation _ID"
+			lab var _X   	"Triangle: X"
+			lab var _Y   	"Triangle: Y"	
+		
+		*cap drop _*  // drop the junk
+		compress
+		save _triangles.dta, replace	
 	
-
-	// make sure the variables are clear
-	cap drop tri_num 
-	cap drop tri_id
-	cap drop tri_x
-	cap drop tri_y
 	
-	if `newobs' > 1 {
-		getmata (tri_num tri_id tri_x tri_y) = mytriangles, force double replace
+	restore
 	}
 			
 	
-	mata: st_matrix("triangles", mytriangles)
-	*mat colnames triangles = "tri_num" "tri_id" "tri_x" "tri_y"
-	*qui svmat triangles, n(col)
-		lab var tri_num "Triangle: number"
-		lab var tri_id  "Triangle: _id"
-		lab var tri_x   "Triangle: x"
-		lab var tri_y   "Triangle: y"
-
-	// drop the junk
+	*mata: st_matrix("triangles", mytriangles)
 	mata: mata drop triangles2 triangles3 triangles4 triangles5 
 	cap drop tri_num  // dud
 	
@@ -1057,24 +1137,24 @@ end
 **********************
 
 cap program drop add_hull
+
 program define add_hull
 	version 15
 
 
-cap drop hull* // make sure the variables are clear
+	cap drop hull* // make sure the variables are clear
 
-	mata: myhull = fixhull(hull,points)
-	mata st_matrix("hull", myhull)
-	mat colnames hull = "hull_num" "hull_id" "hull_x" "hull_y"
-	svmat hull, n(col)
+		mata: myhull = fixhull(hull,points)
+		mata st_matrix("hull", myhull)
+		mat colnames hull = "hull_num" "hull_ID" "hull_X" "hull_Y"
+		svmat hull, n(col)
 
-		lab var hull_num "Hull: number"
-		lab var hull_id  "Hull: _id"
-		lab var hull_x   "Hull: x-coord"
-		lab var hull_y   "Hull: y-coord"
+			cap drop hull_num
+			lab var hull_ID  "Hull: Observation _ID"
+			lab var hull_X   "Hull: X"
+			lab var hull_Y   "Hull: Y"
 		
-		cap drop hull_num  // don't really need it
-		
+		cap mat drop hull
 end
 
 
