@@ -175,9 +175,13 @@ These could be defined by unique attributes like school types, or shop types, or
 
 ## Getting creative with Delaunay
 
+In this example, we use coordinates of the following picture of Dali:
+
+<img src="/figures/dali.jpg" height="600">
+
 Import and set up the file:
 
-```
+```applescript
 import delim using dali.csv
 cap drop v1
 
@@ -189,23 +193,22 @@ drop if value==1
 
 Generate a sample of points:
 
-```
+```applescript
 cap drop sample
-gen sample = runiform() > 0.80    // Lower values = large sample = more processing time. Use with caution. 
+gen sample = runiform() > 0.80	// Lower values = large sample = more processing time. Use with caution. 
 keep if sample==1
-count
+count							// see how many values you are processing
 ```
 
 Run the script:
 
-```
+```applescript
 delaunay y x, tri addbox vor(lines) offset(0) replace
 ```
 
 
-```
+```applescript
 use _vorlines, clear
-
 
 	twoway ///
 		(pcspike vline_y1 vline_x1 vline_y2 vline_x2, lw(0.06) lc(black)) ///
@@ -216,8 +219,11 @@ use _vorlines, clear
 		legend(off)	xsize(3.13) ysize(4)
 ```
 
-```
+<img src="/figures/dali_voronoi.png" height="600">
+
+```applescript
 use _triangles, clear
+
 	twoway ///
 		(line _Y _X, cmissing(n) nodropbase fi(100) fc(none) lw(0.03) lc(black)) ///
 		, ///
@@ -227,6 +233,30 @@ use _triangles, clear
 		legend(off)	xsize(3.13) ysize(4)
 ```
 
+<img src="/figures/dali_triangles.png" height="600">
+
+### R script for covering images to coordinates
+
+If you want to play with other pictures, you can use the following R script to process any image:
+
+```R
+library(imager)
+library(dplyr)
+library(scales)
+
+
+# Convert to grayscale
+load.image("dali.jpg") %>% grayscale() -> x
+
+# Filter image. A higher threshold of "black" = more data points
+x %>%
+  threshold("30%") %>% 
+  as.cimg() %>% 
+  as.data.frame() -> df
+
+
+write.csv(df,"dali.csv", row.names = TRUE)
+```
 
 
 ## Versions
