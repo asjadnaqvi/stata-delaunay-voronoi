@@ -166,7 +166,7 @@ gen group = runiformint(1,6)
 These could be defined by unique attributes like school types, or shop types, or location types. We can now color specific groups separately:
 
 ```applescript
-	spmap group using _vorpoly, id(_ID) fcolor(Pastel2) legend(off)
+spmap group using _vorpoly, id(_ID) fcolor(Pastel2) legend(off)
 ```
 
 <img src="/figures/delaunay_voronoi_polygons_colors.png" height="600">
