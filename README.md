@@ -45,7 +45,7 @@ The summary of options is as follows:
 | addbox  | An experimental option to add a bounding box to the triangles.  |
 
 
-*   Running the command automatically adds an identifier variable `_ID` that can be used to trace back triangles and Voronoi tessellations to the original observations.
+**NOTE:** Running the command automatically adds an identifier variable `_ID` that can be used to trace back triangles and Voronoi tessellations to the original observations.
 
 
 
@@ -65,7 +65,7 @@ set scheme white_tableau
 Generate some random data or use your own coordinates:
 
 ```applescript
-set obs 1000  // works up to 10k observations
+set obs 1000 
 set seed 1337
 
 gen x = runiform(0,100)
@@ -76,6 +76,8 @@ gen y = runiform(0,100)
 drop if sqrt((x-50)^2 + (y-50)^2) > 50
 drop if sqrt((x-50)^2 + (y-50)^2) < 20
 ```
+
+Higher observations result in a higher processing time. For example, 12k data points roughly take a minute for generating the triangles and tessellations.
 
 Run the command:
 
