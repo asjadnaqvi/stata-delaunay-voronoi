@@ -1,11 +1,11 @@
 *! Voronoi tesselations v1.2 04.09.2022: Export voronoi as files. Reshaping removed to optimize speed.
 *! by Asjad Naqvi (asjadnaqvi@gmail.com, @AsjadNaqvi)
-*!
-*! Ver 1.11 05.03.2022: x and y flipped. faster export to Stata using views
-*! Ver 1.10 01.03.2022: polygons exported as shapes. rays fixed. other bug fixes.
-*  Ver 1.02 27.12.2021: rescale integration
-*  Ver 1.01 20.12.2021: minor fixes
-*  Ver 1.00 22.11.2021: first release
+*
+* Ver 1.11 05.03.2022: x and y flipped. faster export to Stata using views
+* Ver 1.10 01.03.2022: polygons exported as shapes. rays fixed. other bug fixes.
+* Ver 1.02 27.12.2021: rescale integration
+* Ver 1.01 20.12.2021: minor fixes
+* Ver 1.00 22.11.2021: first release
 
 
 **************************
@@ -33,7 +33,7 @@ program define voronoi, eclass sortpreserve
 	
 	syntax varlist(min = 2 max = 2 numeric), ///
 		[ lines 			] ///   // export lines
-		[ POLYgons 			] ///  	// export polygons
+		[ polygons 			] ///  	// export polygons
 		[ OFFset(real 0.05) ]		// bounding box of the voronoi. default set at +5% * (max - min)
 	
 	
@@ -70,10 +70,6 @@ program define voronoi, eclass sortpreserve
 			vorpoly `varlist'
 	}	
 	
-	
-	
-	
-	// di "Voronoi: Done"
 	
 end	
 
@@ -115,10 +111,6 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	voredges = J(rows(triangles),2,.)  // voronoi edge pairs indexed to vorcenter
 	forEachVoronoiEdge(triangles,halfedges,voredges)
 	voredges = select(voredges, (voredges[.,1] :< .)) // drop the missing rows
-
-	
-	// printf("Check3\n")	
-	
 	
 	// coordinates of the interior points (vorcenters of triangles in voredges)
 	// each point of a triangle is associated with at most two points
@@ -198,29 +190,19 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 		}
 		
 
-	
 	// append with point type
 	point0 =  point0 \ pointh0
 	point1 =  (point1, J(rows(point1),1,1)) \ (pointh1, J(rows(pointh1),1,2))
 
 	
 	// clip the rays
-	// gen x1, y1, x2, y2
+
 	vorl = J(rows(point0),4,.)
 		
 		for (i=1; i <= rows(point0); i++) {			
-			//i
 			vorl[i,.] = clipline(point0[i,1], point0[i,2], point1[i,1], point1[i,2], xmin, xmax, ymin, ymax)	
-
 		}
 
-	// cliplist = select(cliplist, (cliplist[.,2] :< .)) // drop the missing rows	
-	
-
-	
-	// wrong points are evaluated for some lines. drop them from the graphs
-	// this is some error in the clipline. it is evaluating a wrong point on the line which should be dropped.
-	// manually drop them now. fix later
 	
 		for (i=1; i <= rows(vorl); i++) {	
 			
@@ -249,10 +231,6 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	vorl[.,4] = rescale2(vorl[.,4], ymin, ymax, yminr, ymaxr)			
 		
 	
-	// save the voronoi lines as a Stata matrix
-	
-	// st_matrix("vorlines", vorl)
-	
 	
 	////////////////////////////////
 	/// polygon procedures here  ///
@@ -268,10 +246,7 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	
 
 	for (i=1; i<=rows(voredges); i++) {
-		
-		// i
-		// CommonVals(tri3[.,voredges[i,1]], tri3[.,voredges[i,2]])
-		
+	
 		vorpoly[i * 4 - 3, 1] = CommonVals(tri3[.,voredges[i,1]], tri3[.,voredges[i,2]])[1,1]
 		vorpoly[i * 4 - 2, 1] = CommonVals(tri3[.,voredges[i,1]], tri3[.,voredges[i,2]])[1,1]
 		vorpoly[i * 4 - 1, 1] = CommonVals(tri3[.,voredges[i,1]], tri3[.,voredges[i,2]])[2,1]		
@@ -301,7 +276,6 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 
 	vorpoly2 = J(rows(hull) * 4, 3, .)
 	
-
 	for (i=1; i<=rows(hull); i++) {
 		
 		i1 = i
@@ -340,10 +314,6 @@ function voronoi_core(triangles, points, points2, halfedges, hull, offs, vorl, v
 	vorp = uniqrows(vorp)
 	vorp = vorp, J(rows(vorp),1,.)
 	vorp = select(vorp, (vorp[.,2] :< .)) // drop the missing rows	
-	
-	
-	// export the voronoi polygons
-	// st_matrix("vorpolygons", vorp)  // moved to export polygons program
 }
 
 end
@@ -454,7 +424,7 @@ function circumcenter2(points,triangles,i)
 	ab = (dx * ey - dy * ex) * 2
 	
 	
-	// if (abs(ab) < 1e-9 ) {
+	// if (abs(ab) < 1e-9 ) {  // indexing issue
 		// degenerate case 
 	//	a = 1e9
 	//	r = triangles[1] * 2
@@ -643,16 +613,12 @@ mata:  // clipline
 		code1 = computeCode(x1, y1, minX, maxX, minY, maxY)
 		code2 = computeCode(x2, y2, minX, maxX, minY, maxY)
 		
-		//code1, code2, code1 & code2
-		
 		accept = 0
 		
 		t = 0 // counter
 		
 		zz = 0
 		while (zz == 0)  {
-		
-		//t
 		
 			// If both endpoints lie within rectangle 
 			if (code1 == 0 & code2 == 0) {
@@ -717,7 +683,7 @@ mata:  // clipline
 		
 		t = t + 1
 		if (t > 100) {
-			printf("bad egg\n")
+		//	printf("bad egg\n")
 				x1 = .
 				y1 = .
 				x2 = .

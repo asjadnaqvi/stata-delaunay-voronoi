@@ -49,16 +49,6 @@ prog def delaunay, sortpreserve
 	
 	local obs1 = _N	
 	
-	
-	// check gtools (no longer needed v 1.2)
-	/*
-	capture findfile gtools.ado
-	if _rc != 0 {
-		display as error "gtools package is missing. Click here to install: {stata ssc install gtools, replace}"
-		exit
-	}
-	*/
-	
 	// check voronoi locals
 	local vorcount = wordcount("`voronoi'")
 	
@@ -158,7 +148,6 @@ prog def delaunay, sortpreserve
 	}
 	
 	if "`rescale'" != "" {	
-		// create a copy for the voronoi
 		mata: points2 	   = points  
 		mata: points2[.,1] = rescale(points[.,1], 0, 1)
 		mata: points2[.,2] = rescale(points[.,2], 0, 1)
@@ -242,11 +231,9 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 {
 	num = rows(coords) / 2
 	
-	// populate an array of point indices; calculate input data bbox
-	
 	minX =  1e16
 	minY =  1e16
-	maxX = -1e16   // arbitrary large numbers representing infinity
+	maxX = -1e16   // arbitrary large numbers
 	maxY = -1e16
 	
 	for (i=1; i<= num; i++) {	
@@ -365,7 +352,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 		i2y = y		
 	}
 
-	c0x = .   // blanks to be evaluated in circumcenter below
+	c0x = .   // blanks to be evaluated
 	c0y = .
 		
 	circumcenter(i0x, i0y, i1x, i1y, i2x, i2y, c0x, c0y)
@@ -376,7 +363,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	}
 	
 	// sort the points by distance from the seed triangle circumcenter
-	_quicksort(ids, dists, 1, num - 1)  // num changed to num - 1
+	_quicksort(ids, dists, 1, num - 1) 
 
 	// set up the seed triangle as the starting hull
 	hullStart = i0
@@ -431,10 +418,8 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 		xp = x
 		yp = y
 		
-		
 		// skip seed triangle points
 		if ((i == i0) | (i == i1) | (i == i2)) continue
-		
 		
 		
 		// find a visible edge on the convex hull using edge hash
@@ -480,7 +465,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 		// walk forward through the hull, adding more triangles and flipping recursively
 		num = hullNext[emp, 1]
 	
-		www = 0 // for the infinite while
+		www = 0 // the infinite while
 		while (www == 0) {
 			
 			q  = hullNext[num, 1]	
@@ -497,7 +482,7 @@ void _delaunay_core(coords,ids,dists,triangles,halfedges,hull,hullNext,hullPrev,
 	
 		// walk backward from the other side, adding more triangles and flipping
 		if (emp == start) {
-			www = 0 // while
+			www = 0 
 			while (www == 0) {
 				q = hullPrev[emp,1]
 				
@@ -652,8 +637,8 @@ function legalize(real scalar a, real vector coords, halfedges, edgestack, trian
              
             */
 	
-		a0 =  a - mod(a - 1, 3)  	// mod(a,3)
-		ar = a0 + mod(a + 1, 3)  	//+ mod((a + 2),3)
+		a0 =  a - mod(a - 1, 3)  	
+		ar = a0 + mod(a + 1, 3)  	
 	
 		if (b == -1) { //  convex hull edge
 			if (i == 1) break
@@ -1090,7 +1075,6 @@ program define add_triangles, sortpreserve
 			lab var _X   	"Triangle: X"
 			lab var _Y   	"Triangle: Y"	
 		
-		*cap drop _*  // drop the junk
 		compress
 		save _triangles.dta, replace	
 	
