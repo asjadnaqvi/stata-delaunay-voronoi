@@ -5,6 +5,8 @@
 
 Implementation of the [S-Hull Delaunay](http://www.s-hull.org/) triangulation algorithm in Stata. The Convex Hull is generated as a residual from the triangles. Voronoi tessellations are recovered as a dual to the triangles. 
 
+The implementation is a port of the Mapbox's [Delaunator](https://github.com/mapbox/delaunator) implementation and D3's [Delaunay/Voronoi](https://github.com/d3/d3-delaunay) implementation.
+
 
 ## Install the package
 
