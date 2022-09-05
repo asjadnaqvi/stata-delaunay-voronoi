@@ -238,7 +238,7 @@ use _triangles, clear
 
 <img src="/figures/dali_triangles.png" height="600">
 
-### R script for covering images to coordinates
+### R script for converting images to coordinates
 
 If you want to play with other pictures, you can use the following R script to process any image:
 
@@ -369,11 +369,11 @@ and the Voronoi tessellations:
 <img src="/figures/voronoi_rescale_1.png" height="180"><img src="/figures/voronoi_rescale_5.png" height="180"><img src="/figures/voronoi_rescale_10.png" height="180">
 
 
-### 1.01 (19 Dec 2021)
+### 1.01 beta (19 Dec 2021)
 
 The [if] [in] options were added to the program based on wbuchanan's suggestions. Other code improvements. Some redundancy removed from programs.
 
-### 1.00 (5 Dec 2021)
+### 1.00 beta (5 Dec 2021)
 
 First release.
 
