@@ -35,11 +35,11 @@ The summary of options is as follows:
 | Option | Description |
 | --- |--- |
 | rescale | If the `y` and `x` coordinates do not have similar value ranges, then rescale normalizes to the same interval calculates the triangles and rescales them back. |
-| triangles | exports back the Delaunay triangles as shapes. |
-| hull | exports back the hull as line coordinates. |
-| voronoi(lines polygons) | exports back the Voronoi as *lines* or *polygons* or both. |
+| triangles | exports the Delaunay triangles in the *_triangles.dta* file. |
+| hull | exports back the hull as point coordinates. |
+| voronoi(lines polygons) | exports the Voronoi as *lines* or *polygons* or both as *_vorlines.dta* or *_vorpoly.dta* files. |
 | offset()  | Overwrites the clipping box for the Voronoi. Default is 5% over the (max - min) range. |
-| replace  | Replace the files |
+| replace  | Replace the exported files/variables. |
 | addbox  | An experimental option to add a bounding box to the triangles.  |
 
 
@@ -167,7 +167,6 @@ These could be defined by unique attributes like school types, or shop types, or
 
 ```applescript
 	spmap group using _vorpoly, id(_ID) fcolor(Pastel2) legend(off)
-
 ```
 
 <img src="/figures/delaunay_voronoi_polygons_colors.png" height="600">
@@ -182,7 +181,7 @@ In this example, we use coordinates of the following picture of Dali:
 Import and set up the file:
 
 ```applescript
-import delim using dali.csv
+import delim using "https://github.com/asjadnaqvi/stata-delaunay-voronoi/blob/main/data/dali.csv?raw=true"
 cap drop v1
 
 // flip the yaxis. error in export
