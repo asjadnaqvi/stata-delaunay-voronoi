@@ -10,10 +10,20 @@ The code is based on Mapbox's [Delaunator](https://github.com/mapbox/delaunator)
 
 ## Install the package
 
-Please install and replace the package you want to use it. Small tweaks are continuously being made. The following command can be used to install it directly in Stata:
+Please install and replace the package as follows:
+
+
+SSC (**v1.2**)
+
+```
+ssc install delaunay, replace
+```
+
+
+GitHub (**v1.2**)
 
 ```applescript
-net install delaunay, from("https://raw.githubusercontent.com/asjadnaqvi/stata-delaunay-voronoi/main/installation/") replace force
+net install delaunay, from("https://raw.githubusercontent.com/asjadnaqvi/stata-delaunay-voronoi/main/installation/") replace
 ```
 
 
