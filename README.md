@@ -10,7 +10,7 @@ The code is based on Mapbox's [Delaunator](https://github.com/mapbox/delaunator)
 
 ## Install the package
 
-Please install and replace the package as follows:
+Please install or update the package as follows:
 
 
 SSC (**v1.2**)
