@@ -1,7 +1,11 @@
+
+![delaunay-1](https://github.com/asjadnaqvi/stata-delaunay-voronoi/assets/38498046/d99c079a-6f4b-423b-b003-5d17d0943e3d)
+
 ![StataMin](https://img.shields.io/badge/stata-2015-blue) ![issues](https://img.shields.io/github/issues/asjadnaqvi/stata-delaunay-voronoi) ![license](https://img.shields.io/github/license/asjadnaqvi/stata-delaunay-voronoi) ![Stars](https://img.shields.io/github/stars/asjadnaqvi/stata-delaunay-voronoi) ![version](https://img.shields.io/github/v/release/asjadnaqvi/stata-delaunay-voronoi) ![release](https://img.shields.io/github/release-date/asjadnaqvi/stata-delaunay-voronoi)
 
 
-# DELAUNAY
+# delaunay v1.2
+(04 Sep 2022)
 
 Implementation of the [S-Hull Delaunay](http://www.s-hull.org/) triangulation algorithm in Stata. The Convex Hull is generated as a residual from the triangles. Voronoi tessellations are recovered as a dual to the triangles. 
 
@@ -64,8 +68,8 @@ The summary of options is as follows:
 This section shows code to test the package. In order to replicate the figures as they are, you need to set the following installed:
 
 ```applescript
-ssc install colrspace, replace	
 ssc install palettes , replace	
+ssc install colrspace, replace	
 
 ssc install schemepack, replace  
 set scheme white_tableau
